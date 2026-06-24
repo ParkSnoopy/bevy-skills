@@ -63,7 +63,7 @@ OpenCode reads `~/.claude/skills/` natively — no duplication needed if both ag
 > 2. **[`bevy-core-concepts`](skills/bevy-core-concepts/SKILL.md)** — `App`, `Plugin`, schedules. Without this, the rest won't make sense.
 > 3. **[`bevy-ecs-components`](skills/bevy-ecs-components/SKILL.md)** + **[`bevy-ecs-queries`](skills/bevy-ecs-queries/SKILL.md)** + **[`bevy-ecs-systems`](skills/bevy-ecs-systems/SKILL.md)** — the ECS triangle. Read all three before writing your first system.
 >
-> Migrating from 0.17? Read [`bevy-migration-0-17-to-0-18`](skills/bevy-migration-0-17-to-0-18/SKILL.md) before touching anything else.
+> Migrating? Read [`bevy-migration-0-18-to-0-19`](skills/bevy-migration-0-18-to-0-19/SKILL.md) (latest) or [`bevy-migration-0-17-to-0-18`](skills/bevy-migration-0-17-to-0-18/SKILL.md) before touching anything else.
 
 | Skill | One-line trigger |
 |---|---|
@@ -73,6 +73,7 @@ OpenCode reads `~/.claude/skills/` natively — no duplication needed if both ag
 | [`bevy-ecs-queries`](skills/bevy-ecs-queries/SKILL.md) | `Query<D, F>`, `With`/`Without`/`Or`, `Changed`/`Added`, `par_iter`, lenses, `ArchetypeQueryData`. |
 | [`bevy-ecs-systems`](skills/bevy-ecs-systems/SKILL.md) | `SystemParam`, `SystemSet`, run conditions, ordering, `remove_systems_in_set` (0.18). |
 | [`bevy-cargo-features`](skills/bevy-cargo-features/SKILL.md) | `2d`/`3d`/`ui` collections, `2d_api`/`3d_api`/`ui_api`, feature renames, WASM trim. |
+| [`bevy-migration-0-18-to-0-19`](skills/bevy-migration-0-18-to-0-19/SKILL.md) | Every breaking 0.18 → 0.19 change: text/font (`FontSource`/`FontSize`), `bevy_world_serialization`, resources-as-components. |
 | [`bevy-migration-0-17-to-0-18`](skills/bevy-migration-0-17-to-0-18/SKILL.md) | Every breaking 0.17 → 0.18 change. The rename catalogue. |
 | [`bevy-wasm-webgpu`](skills/bevy-wasm-webgpu/SKILL.md) | WASM build pipeline, WebGL2 vs WebGPU, bundle trimming. |
 | [`bevy-assets`](skills/bevy-assets/SKILL.md) | `AssetServer`, `Handle`, hot-reload, `AssetPath`, `SeekableReader`. |

@@ -137,6 +137,7 @@ See [references/schedule-renames.md](references/schedule-renames.md) for `Schedu
 
 ## See also
 
+- `bevy-migration-0-18-to-0-19` — the next release's rename catalogue.
 - `bevy-core-concepts` — schedule executor change in detail.
 - `bevy-cargo-features` — feature rename table.
 - `bevy-ecs-systems` — `Message`/`MessageReader`/`MessageWriter` ergonomics.
