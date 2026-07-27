@@ -1,0 +1,88 @@
+[package]
+name = "skill-examples"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Runnable Bevy 0.19 examples for the bevy-skills collection."
+
+[lib]
+path = "src/lib.rs"
+
+[[example]]
+name = "bevy"
+path = "examples/bevy.rs"
+
+[[example]]
+name = "bevy_animation"
+path = "examples/bevy_animation.rs"
+
+[[example]]
+name = "bevy_assets"
+path = "examples/bevy_assets.rs"
+
+[[example]]
+name = "bevy_cameras"
+path = "examples/bevy_cameras.rs"
+
+[[example]]
+name = "bevy_capture"
+path = "examples/bevy_capture.rs"
+
+[[example]]
+name = "bevy_core_concepts"
+path = "examples/bevy_core_concepts.rs"
+
+[[example]]
+name = "bevy_custom_assets"
+path = "examples/bevy_custom_assets.rs"
+
+[[example]]
+name = "bevy_ecs_components"
+path = "examples/bevy_ecs_components.rs"
+
+[[example]]
+name = "bevy_ecs_queries"
+path = "examples/bevy_ecs_queries.rs"
+
+[[example]]
+name = "bevy_ecs_systems"
+path = "examples/bevy_ecs_systems.rs"
+
+[[example]]
+name = "bevy_pbr_materials"
+path = "examples/bevy_pbr_materials.rs"
+
+[[example]]
+name = "bevy_ui"
+path = "examples/bevy_ui.rs"
+
+[[example]]
+name = "bevy_vfx"
+path = "examples/bevy_vfx.rs"
+
+[[example]]
+name = "bevy_voxel_data"
+path = "examples/bevy_voxel_data.rs"
+
+[[example]]
+name = "bevy_voxel_pipeline"
+path = "examples/bevy_voxel_pipeline.rs"
+
+[dependencies]
+bevy = { version = "0.19", features = [
+    "3d",
+    "bevy_audio",
+    "vorbis",
+    "free_camera",
+    "gltf_animation",
+    "system_font_discovery",
+    "bevy_dev_tools",
+] }
+bevy_hanabi = { version = "0.19", features = ["3d"] }
+bevy_capture = "0.6"
+block-mesh = "0.2"
+ndshape = "0.3"
+ron = "0.8"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+futures-lite = "2"
