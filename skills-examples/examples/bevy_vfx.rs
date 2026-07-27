@@ -9,9 +9,18 @@ use bevy::prelude::*;
 // Do NOT `use bevy_hanabi::prelude::*` — `Gradient` collides with
 // `bevy::prelude::Gradient` (bevy_ui's CSS gradient enum).
 use bevy_hanabi::prelude::{
-    AccelModifier, Attribute, ColorOverLifetimeModifier, EffectAsset, ExprWriter,
-    HanabiPlugin, ParticleEffect, SetAttributeModifier, SetPositionSphereModifier,
-    SetVelocitySphereModifier, ShapeDimension, SpawnerSettings,
+    AccelModifier,
+    Attribute,
+    ColorOverLifetimeModifier,
+    EffectAsset,
+    ExprWriter,
+    HanabiPlugin,
+    ParticleEffect,
+    SetAttributeModifier,
+    SetPositionSphereModifier,
+    SetVelocitySphereModifier,
+    ShapeDimension,
+    SpawnerSettings,
 };
 
 fn main() {

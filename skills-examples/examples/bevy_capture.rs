@@ -15,13 +15,19 @@
 //! OpenH264 binary license. `Mp4Openh264Encoder` / `Mp4FfmpegCliEncoder` /
 //! `Mp4FfmpegCliPipeEncoder` are feature-gated in `bevy_capture`'s Cargo.toml.
 
-use bevy::camera::RenderTarget;
-use bevy::prelude::*;
-use bevy_capture::{
-    encoder::frames::FramesEncoder, Capture, CaptureBundle, CapturePlugin,
-    RenderTargetHeadless,
-};
 use std::fs;
+
+use bevy::{
+    camera::RenderTarget,
+    prelude::*,
+};
+use bevy_capture::{
+    Capture,
+    CaptureBundle,
+    CapturePlugin,
+    RenderTargetHeadless,
+    encoder::frames::FramesEncoder,
+};
 
 fn main() {
     App::new()
@@ -37,11 +43,7 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     // example. `RenderTarget::target_headless` is an extension trait from
     // `bevy_capture`; `RenderTarget` is a separate component (0.18+).
     let render_target = RenderTarget::target_headless(256, 256, &mut images);
-    commands.spawn((
-        Camera2d,
-        render_target,
-        CaptureBundle::default(),
-    ));
+    commands.spawn((Camera2d, render_target, CaptureBundle::default()));
 }
 
 // Call `Capture::start` once we're ready, then `stop` after a few frames.

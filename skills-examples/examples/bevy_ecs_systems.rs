@@ -3,8 +3,10 @@
 //! Buffered events are `Message`s in 0.19 (renamed from `Event` in 0.17).
 //! `MessageReader`/`MessageWriter` replace `EventReader`/`EventWriter`.
 
-use bevy::ecs::system::SystemParam;
-use bevy::prelude::*;
+use bevy::{
+    ecs::system::SystemParam,
+    prelude::*,
+};
 
 #[derive(SystemSet, Hash, PartialEq, Eq, Clone, Debug)]
 enum GameLoop {
@@ -57,7 +59,10 @@ fn main() {
                 .run_if(on_message::<GoalScored>),
         )
         .add_systems(Update, draw_hud.in_set(GameLoop::Render))
-        .add_systems(Update, promote_to_playing.run_if(in_state(AppState::Loading)))
+        .add_systems(
+            Update,
+            promote_to_playing.run_if(in_state(AppState::Loading)),
+        )
         .run();
 }
 

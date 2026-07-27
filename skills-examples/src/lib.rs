@@ -6,4 +6,8 @@
 
 pub mod voxel;
 
-pub use voxel::{BlockId, ChunkShape, mesh_chunk};
+pub use voxel::{
+    BlockId,
+    ChunkShape,
+    mesh_chunk,
+};

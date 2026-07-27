@@ -4,9 +4,17 @@
 //! `LoadContext::path()` still returns `AssetPath` (use `.path()` on it for the
 //! platform path). `reader.read_to_end` is the basic async reader API.
 
-use bevy::asset::{Asset, AssetApp, AssetLoader, LoadContext, io::Reader};
-use bevy::prelude::*;
-use bevy::reflect::TypePath;
+use bevy::{
+    asset::{
+        Asset,
+        AssetApp,
+        AssetLoader,
+        LoadContext,
+        io::Reader,
+    },
+    prelude::*,
+    reflect::TypePath,
+};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -57,7 +65,8 @@ impl AssetLoader for LevelLoader {
 pub struct LevelLoaderPlugin;
 impl Plugin for LevelLoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_asset::<LevelDef>().register_asset_loader(LevelLoader);
+        app.init_asset::<LevelDef>()
+            .register_asset_loader(LevelLoader);
     }
 }
 

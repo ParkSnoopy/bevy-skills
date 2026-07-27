@@ -4,11 +4,16 @@
 //! `AmbientLight` is a per-camera component; world default lives in
 //! `GlobalAmbientLight`. `FreeCamera` needs its plugin AND Cargo feature.
 
-use bevy::asset::RenderAssetUsages;
-use bevy::camera::RenderTarget;
-use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin};
-use bevy::light::GlobalAmbientLight;
-use bevy::prelude::*;
+use bevy::{
+    asset::RenderAssetUsages,
+    camera::RenderTarget,
+    camera_controller::free_camera::{
+        FreeCamera,
+        FreeCameraPlugin,
+    },
+    light::GlobalAmbientLight,
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -43,10 +48,9 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
         RenderAssetUsages::default(),
     );
-    image.texture_descriptor.usage =
-        bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
-            | bevy::render::render_resource::TextureUsages::COPY_DST
-            | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
+    image.texture_descriptor.usage = bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
+        | bevy::render::render_resource::TextureUsages::COPY_DST
+        | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
     let image_handle = images.add(image);
 
     // 3. Second camera drawing into the texture.

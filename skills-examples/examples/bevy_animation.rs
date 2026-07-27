@@ -6,14 +6,21 @@
 //! `AnimationPlayer`. Also spawns a `Camera3d` so the app is visible when run.
 //! `On<E>` (not `Trigger<E>`) — the rename landed in 0.17 and still holds in 0.19.
 
-use bevy::animation::graph::AnimationNodeIndex;
-use bevy::animation::{
-    animated_field,
-    animation_curves::{AnimatableCurve, AnimatableKeyframeCurve},
-    AnimationEvent, AnimationTargetId,
-};
-use bevy::prelude::*;
 use core::time::Duration;
+
+use bevy::{
+    animation::{
+        AnimationEvent,
+        AnimationTargetId,
+        animated_field,
+        animation_curves::{
+            AnimatableCurve,
+            AnimatableKeyframeCurve,
+        },
+        graph::AnimationNodeIndex,
+    },
+    prelude::*,
+};
 
 #[derive(AnimationEvent, Clone)]
 struct FootstepEvent {
@@ -69,9 +76,7 @@ fn setup(
     ));
 }
 
-fn start(
-    mut q: Query<(&mut AnimationTransitions, &mut AnimationPlayer), Added<AnimationPlayer>>,
-) {
+fn start(mut q: Query<(&mut AnimationTransitions, &mut AnimationPlayer), Added<AnimationPlayer>>) {
     use bevy::animation::RepeatAnimation;
     for (mut tx, mut player) in &mut q {
         tx.play(

@@ -3,13 +3,25 @@
 //! Mirrors the `bevy-voxel-pipeline` skill: `block_mesh 0.2` + `ndshape 0.3`
 //! glued into a Bevy 0.19 `Mesh`.
 
-use bevy::asset::RenderAssetUsages;
-use bevy::mesh::{Indices, PrimitiveTopology};
-use bevy::prelude::*;
-use block_mesh::ndshape::{ConstShape, ConstShape3u32};
+use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{
+        Indices,
+        PrimitiveTopology,
+    },
+    prelude::*,
+};
 use block_mesh::{
-    greedy_quads, GreedyQuadsBuffer, MergeVoxel, Voxel, VoxelVisibility,
+    GreedyQuadsBuffer,
+    MergeVoxel,
     RIGHT_HANDED_Y_UP_CONFIG,
+    Voxel,
+    VoxelVisibility,
+    greedy_quads,
+    ndshape::{
+        ConstShape,
+        ConstShape3u32,
+    },
 };
 
 /// 18^3: a 16^3 chunk with one cell of padding on each axis so
@@ -74,9 +86,14 @@ pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
-    mesh.try_insert_attribute(Mesh::ATTRIBUTE_POSITION, positions).ok()?;
-    mesh.try_insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals).ok()?;
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.try_insert_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+        .ok()?;
+    mesh.try_insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .ok()?;
     mesh.insert_indices(Indices::U32(indices));
     Some(mesh)
 }

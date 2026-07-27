@@ -6,10 +6,18 @@
 //! and `Mesh::try_insert_attribute` (0.18+; returns `Result` — see Rust source
 //! for `skill_examples::voxel`) builds the Bevy `Mesh` once the task completes.
 
-use bevy::prelude::*;
-use bevy::tasks::{AsyncComputeTaskPool, Task};
+use bevy::{
+    prelude::*,
+    tasks::{
+        AsyncComputeTaskPool,
+        Task,
+    },
+};
 use futures_lite::future;
-use skill_examples::voxel::{demo_chunk, mesh_chunk};
+use skill_examples::voxel::{
+    demo_chunk,
+    mesh_chunk,
+};
 
 /// Marker for a pending meshing task.
 #[derive(Component)]

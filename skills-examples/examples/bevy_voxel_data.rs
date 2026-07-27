@@ -6,11 +6,20 @@
 //! in code via `AssetServer::load` against a path you'd ship at
 //! `assets/blocks.ron` in a real project.
 
-use bevy::asset::{Asset, AssetApp, AssetLoader, LoadContext, io::Reader};
-use bevy::prelude::*;
-use bevy::reflect::TypePath;
-use serde::Deserialize;
 use std::collections::HashMap;
+
+use bevy::{
+    asset::{
+        Asset,
+        AssetApp,
+        AssetLoader,
+        LoadContext,
+        io::Reader,
+    },
+    prelude::*,
+    reflect::TypePath,
+};
+use serde::Deserialize;
 use thiserror::Error;
 
 /// One entry in the on-disk RON block catalog.

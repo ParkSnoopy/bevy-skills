@@ -13,8 +13,13 @@
 //! runs after the first mouse event), so set it to the colour you want at
 //! spawn to avoid a frame-0 mismatch.
 
-use bevy::input_focus::{FocusCause, InputFocus};
-use bevy::prelude::*;
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -54,9 +59,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             children![(
                 Text::new("Button"),
                 TextFont {
-                    font: asset_server
-                        .load("fonts/FiraSans-Bold.ttf")
-                        .into(), // Handle<Font> -> FontSource via From
+                    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(), // Handle<Font> -> FontSource via From
                     font_size: FontSize::Px(33.0), // 0.19: FontSize, not bare f32
                     ..default()
                 },

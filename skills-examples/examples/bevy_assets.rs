@@ -3,8 +3,10 @@
 //! `AssetEvent<T>` is a `Message` in 0.19: iterate with `MessageReader<AssetEvent<T>>`,
 //! not `EventReader`. Hot-reload is dev-only.
 
-use bevy::asset::LoadState;
-use bevy::prelude::*;
+use bevy::{
+    asset::LoadState,
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -42,10 +44,7 @@ fn react_to_loads(mut ev: MessageReader<AssetEvent<Image>>, images: Res<Assets<I
 
 // `LoadState` is not `PartialEq` in 0.19 — use `matches!` instead of `==`.
 fn check_readiness(asset_server: Res<AssetServer>, handles: Res<MyHandles>) {
-    if matches!(
-        asset_server.load_state(&handles.hero),
-        LoadState::Loaded
-    ) {
+    if matches!(asset_server.load_state(&handles.hero), LoadState::Loaded) {
         info!("hero gltf ready");
     }
 }
