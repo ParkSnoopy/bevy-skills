@@ -1,19 +1,19 @@
 ---
 name: bevy-fluent
-description: Use when adding localization to a Bevy 0.18 app with `es-fluent-manager-bevy`, defining typed messages with `#[derive(EsFluent)]`, wrapping UI text in `FluentText<T>`, auto-registering locale updates with `#[derive(BevyFluentText)]`, or reacting to locale switches via `LocaleChangeEvent`. Covers `I18nPlugin`, `RequestedLanguageId`, `i18n.toml` config, and hot-reload of `.ftl` assets.
+description: Use when adding localization to a Bevy 0.19 app with `es-fluent-manager-bevy`, defining typed messages with `#[derive(EsFluent)]`, wrapping UI text in `FluentText<T>`, auto-registering locale updates with `#[derive(BevyFluentText)]`, or reacting to locale switches via `LocaleChangeEvent`. Covers `I18nPlugin`, `RequestedLanguageId`, `i18n.toml` config, and hot-reload of `.ftl` assets.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: i18n
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Localization (es-fluent)
+# Bevy 0.19 — Localization (es-fluent)
 
 ## When to use this skill
 
-- Adding Fluent-based i18n to a Bevy app (`es-fluent-manager-bevy = "0.18"`).
+- Adding Fluent-based i18n to a Bevy app (`es-fluent-manager-bevy = "0.19"`).
 - Defining typed UI messages with `#[derive(EsFluent)]` and `#[derive(BevyFluentText)]`.
 - Wrapping a UI text entity with `FluentText<T>` for automatic locale-driven refresh.
 - Switching locales at runtime via `LocaleChangeEvent`.
@@ -25,9 +25,9 @@ metadata:
 
 ```toml
 [dependencies]
-bevy                   = "0.18"
-es-fluent              = { version = "0.15", features = ["derive"] }
-es-fluent-manager-bevy = { version = "0.18", features = ["macros"] }
+bevy                   = "0.19"
+es-fluent              = { version = "0.18", features = ["derive"] }
+es-fluent-manager-bevy = { version = "0.19", features = ["macros"] }
 unic-langid            = "0.9"
 ```
 

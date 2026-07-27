@@ -1,10 +1,10 @@
-# GitHub Copilot — Bevy 0.18
+# GitHub Copilot — Bevy 0.19
 
 Copilot does not load Agent Skills directly. This file mirrors the key rules so Copilot users in this repo still benefit.
 
 ## When writing Bevy code
 
-1. **Bevy 0.18 only.** Do not suggest 0.17 or earlier APIs. Specifically:
+1. **Bevy 0.19 only.** Do not suggest 0.17 or earlier APIs. Specifically:
    - Events use `MessageWriter` / `MessageReader` (not `EventWriter` / `EventReader` — those were renamed in the 0.17→0.18 migration; double-check the relevant skill in `skills/bevy-migration-0-17-to-0-18/`).
    - Asset paths support `short-type-path` in 0.18.
    - Required components use `#[require(...)]` on `Component` derives.

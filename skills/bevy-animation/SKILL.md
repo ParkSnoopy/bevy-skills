@@ -1,15 +1,15 @@
 ---
 name: bevy-animation
-description: Use when wiring `AnimationPlayer` + `AnimationGraphHandle`, building an `AnimationGraph` from glTF clips, blending state-driven animations with `AnimationTransitions::play`, isolating body parts with `AnimationMask`, firing gameplay sync via `#[derive(AnimationEvent)]` + `On<E>` observers, tweening with `AnimatableCurve` / `EaseFunction` / `CubicSegment::new_bezier_easing`, or applying the 12 Basic Principles of Animation to 3D characters in Bevy 0.18.
+description: Use when wiring `AnimationPlayer` + `AnimationGraphHandle`, building an `AnimationGraph` from glTF clips, blending state-driven animations with `AnimationTransitions::play`, isolating body parts with `AnimationMask`, firing gameplay sync via `#[derive(AnimationEvent)]` + `On<E>` observers, tweening with `AnimatableCurve` / `EaseFunction` / `CubicSegment::new_bezier_easing`, or applying the 12 Basic Principles of Animation to 3D characters in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "3"
   area: animation
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Animation (graphs, blending, events, 12 principles)
+# Bevy 0.19 — Animation (graphs, blending, events, 12 principles)
 
 ## When to use this skill
 
@@ -23,83 +23,105 @@ metadata:
 
 ## Canonical end-to-end pattern
 
-Verified against `bevy = "0.18"` — `cargo check` clean in `bevy-skills-tester/skill-snippets/examples/bevy_animation.rs`.
+Verified against `bevy = "0.19"` — `cargo check` clean in `skills-examples/examples/bevy_animation.rs`.
 
 ```rust
+//! `bevy-animation` skill — procedural `AnimationClip`, `AnimationGraph`,
+//! `AnimationTransitions::play`, `#[derive(AnimationEvent)]` + `On<E>` observer.
+//!
+//! Builds the clip in code (no glTF file needed), composes a graph, spawns
+//! the player, and starts playback on any entity that gained an
+//! `AnimationPlayer`. Also spawns a `Camera3d` so the app is visible when run.
+//! `On<E>` (not `Trigger<E>`) — the rename landed in 0.17 and still holds in 0.19.
+
+use core::time::Duration;
+
 use bevy::{
     animation::{
+        AnimationEvent,
+        AnimationTargetId,
         animated_field,
-        animation_curves::{AnimatableCurve, AnimatableKeyframeCurve},
-        AnimationEvent, AnimationTargetId,
+        animation_curves::{
+            AnimatableCurve,
+            AnimatableKeyframeCurve,
+        },
+        graph::AnimationNodeIndex,
     },
     prelude::*,
 };
-use core::time::Duration;
 
 #[derive(AnimationEvent, Clone)]
-struct FootstepEvent { foot: u8 }
-
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut clips: ResMut<Assets<AnimationClip>>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
-) {
-    // 1. Load a glTF clip
-    let walk: Handle<AnimationClip> =
-        asset_server.load("models/character.glb#Animation0");
-
-    // 2. Build a tiny procedural clip with a sample curve + an event
-    let bone = AnimationTargetId::from_name(&Name::new("Hips"));
-    let tween = AnimatableKeyframeCurve::new([
-        (0.0_f32, Vec3::ZERO),
-        (0.5,     Vec3::new(0.0, 1.0, 0.0)),
-        (1.0,     Vec3::ZERO),
-    ]).expect("strictly-increasing times");
-    let curve = AnimatableCurve::new(animated_field!(Transform::translation), tween);
-    let mut proc = AnimationClip::default();
-    proc.add_curve_to_target(bone, curve);
-    proc.add_event(0.5, FootstepEvent { foot: 0 });
-    let proc = clips.add(proc);
-
-    // 3. Compose a graph: root → walk + additive(proc, mask=group 0 excluded)
-    const MASK_GROUP_0_BIT: u64 = 1 << 0;
-    let mut graph = AnimationGraph::new();
-    let root = graph.root;
-    let _walk_node = graph.add_clip(walk, 1.0, root);
-    let additive = graph.add_additive_blend(0.5, root);
-    let _proc_node = graph.add_clip_with_mask(proc, MASK_GROUP_0_BIT, 1.0, additive);
-
-    // 4. Spawn the player entity (bones come from the loaded glTF scene)
-    commands.spawn((
-        Name::new("AnimationRoot"),
-        AnimationPlayer::default(),
-        AnimationGraphHandle(graphs.add(graph)),
-        AnimationTransitions::new(),
-    ));
-}
-
-fn start(mut q: Query<(&mut AnimationTransitions, &mut AnimationPlayer), Added<AnimationPlayer>>) {
-    use bevy::animation::{graph::AnimationNodeIndex, RepeatAnimation};
-    for (mut tx, mut player) in &mut q {
-        tx.play(&mut player, AnimationNodeIndex::new(1), Duration::from_millis(250))
-            .set_repeat(RepeatAnimation::Forever);
-    }
-}
-
-fn on_footstep(trigger: On<FootstepEvent>) {
-    let foot = trigger.foot;                        // On<E> derefs to &E
-    let _entity = trigger.trigger().target;          // AnimationEventTrigger::target
-    let _ = foot;
+struct FootstepEvent {
+    foot: u8,
 }
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)                 // gltf_animation is a default feature
+        .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
         .add_systems(Update, start)
         .add_observer(on_footstep)
         .run();
+}
+
+fn setup(
+    mut commands: Commands,
+    mut clips: ResMut<Assets<AnimationClip>>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
+) {
+    // 1. Build a tiny procedural clip: a translation curve on "Hips" + an event.
+    let bone = AnimationTargetId::from_name(&Name::new("Hips"));
+    let tween = AnimatableKeyframeCurve::new([
+        (0.0_f32, Vec3::ZERO),
+        (0.5, Vec3::new(0.0, 1.0, 0.0)),
+        (1.0, Vec3::ZERO),
+    ])
+    .expect("strictly-increasing times");
+    let curve = AnimatableCurve::new(animated_field!(Transform::translation), tween);
+    let mut clip = AnimationClip::default();
+    clip.add_curve_to_target(bone, curve);
+    clip.add_event(0.5, FootstepEvent { foot: 0 });
+    let clip_handle = clips.add(clip);
+
+    // 2. Compose a graph: root -> clip node.
+    let mut graph = AnimationGraph::new();
+    let root = graph.root;
+    let _clip_node = graph.add_clip(clip_handle, 1.0, root);
+    let graph_handle = graphs.add(graph);
+
+    // 3. Spawn the player entity. (Bones come from a loaded glTF scene in
+    //    real use; here the procedural clip is enough to exercise the API.)
+    commands.spawn((
+        Name::new("AnimationRoot"),
+        AnimationPlayer::default(),
+        AnimationGraphHandle(graph_handle),
+        AnimationTransitions::new(),
+    ));
+
+    commands.spawn((
+        Camera3d::default(),
+        Transform::from_xyz(0.0, 2.0, 6.0).looking_at(Vec3::ZERO, Vec3::Y),
+    ));
+}
+
+fn start(mut q: Query<(&mut AnimationTransitions, &mut AnimationPlayer), Added<AnimationPlayer>>) {
+    use bevy::animation::RepeatAnimation;
+    for (mut tx, mut player) in &mut q {
+        tx.play(
+            &mut player,
+            AnimationNodeIndex::new(1),
+            Duration::from_millis(250),
+        )
+        .set_repeat(RepeatAnimation::Forever);
+    }
+}
+
+// `On<E>` derefs to `&E`: access event fields directly. The firing entity
+// is at `trigger.trigger().target` (AnimationEventTrigger::target).
+fn on_footstep(trigger: On<FootstepEvent>) {
+    let foot = trigger.foot;
+    let _entity = trigger.trigger().target;
+    let _ = foot;
 }
 ```
 
@@ -131,7 +153,7 @@ The four `principles-*.md` references group Thomas & Johnston's twelve principle
 ## Gotchas
 
 - **0.17 → 0.18 split.** `AnimationTarget { id, player }` no longer exists. It's now two separate components on each bone entity: `AnimationTargetId(Uuid)` + `AnimatedBy(Entity)`. The glTF loader spawns these for you.
-- **`gltf_animation` is on by default.** It's already in `bevy = "0.18"`'s default features — no opt-in needed unless you ran `default-features = false`.
+- **`gltf_animation` is on by default.** It's already in `bevy = "0.19"`'s default features — no opt-in needed unless you ran `default-features = false`.
 - **`AnimationTransitions::play_with_transition` does NOT exist.** The real and only method is `play(&mut self, player, node, Duration) -> &mut ActiveAnimation`. Chain `.set_repeat(RepeatAnimation::Forever)` / `.set_speed(f32)` on the returned value.
 - **`animated_field!` and `AnimatableCurve` are not in the prelude.** Import explicitly from `bevy::animation::{animated_field, animation_curves::{AnimatableCurve, AnimatableKeyframeCurve}}`.
 - **`On<AnimationEvent>` is not an `EntityEvent` observer.** `On<E>` derefs to `&E` (access event fields directly). The firing entity is at `trigger.trigger().target` (the `AnimationEventTrigger::target` field renamed from `animation_player` in 0.18). `.target()` is not available — that's for `EntityEvent`s.

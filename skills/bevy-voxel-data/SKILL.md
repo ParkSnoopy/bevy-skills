@@ -1,15 +1,15 @@
 ---
 name: bevy-voxel-data
-description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.18 voxel-data patterns — no game-specific data baked in.
+description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.19 voxel-data patterns — no game-specific data baked in.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: voxel
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Voxel data (RON, palette, KTX2 atlas)
+# Bevy 0.19 — Voxel data (RON, palette, KTX2 atlas)
 
 ## When to use this skill
 
@@ -42,21 +42,64 @@ metadata:
 **2. Core Rust types** — `BlockCatalog` is a Bevy `Asset`; `Palette` is a `Resource`:
 
 ```rust
-#[derive(Debug, Deserialize, Asset, TypePath)]
-pub struct BlockCatalog { pub blocks: Vec<BlockDef> }
+use std::collections::HashMap;
+
+use bevy::{asset::Asset, prelude::*, reflect::TypePath};
+use serde::Deserialize;
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BlockDef {
+    pub name: String,
+    pub visibility: BlockVisibility,
+    pub faces: BlockFaces,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub enum BlockVisibility {
+    #[default]
+    Empty,
+    Opaque,
+    Translucent,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct BlockFaces {
+    pub all: Option<String>,
+    pub top: Option<String>,
+    pub bottom: Option<String>,
+    pub side: Option<String>,
+}
+
+#[derive(Asset, TypePath, Debug, Deserialize)]
+pub struct BlockCatalog {
+    pub blocks: Vec<BlockDef>,
+}
 
 #[derive(Resource, Default)]
 pub struct Palette {
-    pub by_id:   Vec<PaletteEntry>,   // index == BlockId
+    pub by_id: Vec<PaletteEntry>,
     pub by_name: HashMap<String, u16>,
 }
 
 #[derive(Default, Clone)]
 pub struct PaletteEntry {
-    pub name:       String,
-    pub visibility: Visibility,
-    /// Atlas tile per face: [−X, −Y, −Z, +X, +Y, +Z] (block-mesh order).
+    pub name: String,
+    pub visibility: BlockVisibility,
+    /// Atlas tile per face: [-X, -Y, -Z, +X, +Y, +Z].
     pub face_tiles: [u16; 6],
+}
+
+pub fn build_palette(catalog: &BlockCatalog) -> Palette {
+    let mut palette = Palette::default();
+    for (id, block) in catalog.blocks.iter().enumerate() {
+        palette.by_id.push(PaletteEntry {
+            name: block.name.clone(),
+            visibility: block.visibility.clone(),
+            face_tiles: [0; 6],
+        });
+        palette.by_name.insert(block.name.clone(), id as u16);
+    }
+    palette
 }
 ```
 

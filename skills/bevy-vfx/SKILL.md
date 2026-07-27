@@ -1,24 +1,23 @@
 ---
 name: bevy-vfx
-description: Use when adding GPU particles via `bevy_hanabi 0.18.0` (`HanabiPlugin`, `EffectAsset`, `ParticleEffect`, `Module` + `ExprWriter`, modifiers like `SetPositionSphereModifier` / `ColorOverLifetimeModifier`), rendering Gaussian splats via `bevy_spark 0.2.0` for photoreal scene captures, picking between hanabi and lighter sprite-sheet flipbooks, writing custom `Material` + WGSL shaders for fire/water/distortion, or budgeting GPU costs and WebGPU compatibility in Bevy 0.18.
+description: Use when adding GPU particles via `bevy_hanabi 0.19.0` (`HanabiPlugin`, `EffectAsset`, `ParticleEffect`, `Module` + `ExprWriter`, modifiers like `SetPositionSphereModifier` / `ColorOverLifetimeModifier`), rendering Gaussian splats via `bevy_spark 0.2.0` in Bevy 0.18 projects for photoreal scene captures, picking between hanabi and lighter sprite-sheet flipbooks, writing custom `Material` + WGSL shaders for fire/water/distortion, or budgeting GPU costs and WebGPU compatibility in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "4"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — VFX (particles, shaders, Gaussian splats)
+# Bevy 0.19 — VFX (particles, shaders, Gaussian splats)
 
 ## Compatibility status
 
-Both major VFX crates pin Bevy 0.18 cleanly — no patches required (unlike `bevy_capture`):
+The runnable particle path uses `bevy_hanabi = "0.19.0"`, which tracks Bevy 0.19.
 
-- `bevy_hanabi = "0.18.0"` (published 2026-02-01) for GPU-compute particles.
-- `bevy_spark = "0.2.0"` (published 2026-05-04, repo `htdt/bevy_spark`) for Gaussian-splat rendering.
+`bevy_spark = "0.2.0"` remains a Bevy 0.18 crate, so its Gaussian-splat path is not included in the Bevy 0.19 `skills-examples` crate. Verify a Bevy 0.19 release before adding it to a 0.19 project.
 
-Both require **WebGPU** in WASM builds — there is no WebGL2 path. Custom `Material` shaders and `bevy_spritesheet_animation` work on both targets.
+Hanabi requires **WebGPU** in WASM builds — there is no WebGL2 path. Custom `Material` shaders and `bevy_spritesheet_animation` work on both targets.
 
 ## When to use this skill
 
@@ -31,16 +30,32 @@ Both require **WebGPU** in WASM builds — there is no WebGL2 path. Custom `Mate
 
 ## Canonical end-to-end pattern
 
-Verified against `bevy = "0.18"` + `bevy_hanabi = "0.18.0"` — `cargo check` clean in `bevy-skills-tester/skill-snippets/examples/bevy_particle_effects.rs`.
+Verified against `bevy = "0.19"` + `bevy_hanabi = "0.19.0"` — `cargo check` clean in `skills-examples/examples/bevy_vfx.rs`.
 
 ```rust
+//! `bevy-vfx` skill — `bevy_hanabi 0.19` GPU particle effect on the main world.
+//!
+//! GPU particles need WebGPU on WASM targets; this example targets native only.
+//! `bevy_hanabi::Gradient` name-collides with `bevy::prelude::Gradient`
+//! (`bevy_ui`'s CSS gradient enum) — import from `bevy_hanabi::prelude` selectively
+//! and qualify `Gradient` instead of pulling it in via the prelude glob.
+
 use bevy::prelude::*;
-// Do NOT use `bevy_hanabi::prelude::*` — `Gradient` name-collides with
-// `bevy::prelude::Gradient` (bevy_ui's CSS Gradient in 0.18). Import explicitly:
+// Do NOT `use bevy_hanabi::prelude::*` — `Gradient` collides with
+// `bevy::prelude::Gradient` (bevy_ui's CSS gradient enum).
 use bevy_hanabi::prelude::{
-    AccelModifier, Attribute, ColorOverLifetimeModifier, EffectAsset, ExprWriter, HanabiPlugin,
-    ParticleEffect, SetAttributeModifier, SetPositionSphereModifier, SetVelocitySphereModifier,
-    ShapeDimension, SpawnerSettings,
+    AccelModifier,
+    Attribute,
+    ColorOverLifetimeModifier,
+    EffectAsset,
+    ExprWriter,
+    HanabiPlugin,
+    ParticleEffect,
+    SetAttributeModifier,
+    SetPositionSphereModifier,
+    SetVelocitySphereModifier,
+    ShapeDimension,
+    SpawnerSettings,
 };
 
 fn main() {
@@ -72,8 +87,8 @@ fn setup(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
         speed: writer.lit(4.0_f32).expr(),
     };
 
-    // Init: LIFETIME is required to recycle particles.
-    // Init: AGE is required because ColorOverLifetimeModifier reads age/lifetime.
+    // LIFETIME required to recycle particles; AGE required because
+    // ColorOverLifetimeModifier reads age/lifetime.
     let init_lifetime = SetAttributeModifier::new(
         Attribute::LIFETIME,
         writer.lit(0.5_f32).uniform(writer.lit(1.5_f32)).expr(),
@@ -83,8 +98,8 @@ fn setup(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
     // Update: constant downward acceleration.
     let update_gravity = AccelModifier::new(writer.lit(Vec3::new(0.0, -6.0, 0.0)).expr());
 
-    // Render: red → orange → transparent over lifetime.
-    // Fully qualified: bevy_hanabi::Gradient (not bevy::prelude::Gradient).
+    // Render: red -> orange -> transparent over lifetime.
+    // Fully qualified: bevy_hanabi::Gradient (NOT bevy::prelude::Gradient).
     let mut color: bevy_hanabi::Gradient<Vec4> = bevy_hanabi::Gradient::new();
     color.add_key(0.0, Vec4::new(4.0, 0.5, 0.0, 1.0));
     color.add_key(0.5, Vec4::new(2.0, 1.0, 0.0, 0.8));
@@ -92,10 +107,11 @@ fn setup(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
     let render_color = ColorOverLifetimeModifier::new(color);
 
     // Spawner: 200 particles/sec continuous stream. NOTE: Spawner::rate
-    // does NOT exist in 0.18 — use SpawnerSettings::rate(n.into()).
+    // does NOT exist in 0.19 — use SpawnerSettings::rate(n.into()).
     let spawner = SpawnerSettings::rate(200.0_f32.into());
 
-    // finish() consumes the writer, producing the Module passed to EffectAsset::new.
+    // finish() consumes the writer, producing the Module passed to
+    // EffectAsset::new.
     let module = writer.finish();
 
     let effect = EffectAsset::new(16384, spawner, module)
@@ -108,8 +124,8 @@ fn setup(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
         .render(render_color);
     let handle = effects.add(effect);
 
-    // ParticleEffect is a bare component in 0.18 — no ParticleEffectBundle.
-    // #[require(CompiledParticleEffect, ...)] fills in the rest automatically.
+    // ParticleEffect is a bare component in 0.19 — no ParticleEffectBundle.
+    // `#[require(CompiledParticleEffect, ...)]` fills in the rest automatically.
     commands.spawn((
         Name::new("ember_burst"),
         ParticleEffect::new(handle),
@@ -144,20 +160,20 @@ fn setup(mut commands: Commands, mut effects: ResMut<Assets<EffectAsset>>) {
 
 ## Gotchas
 
-- **`SpawnerSettings::rate(...)` — not `Spawner::rate`.** The `Spawner` struct does NOT exist in `bevy_hanabi 0.18`. The whole emission API is on `SpawnerSettings`.
-- **`ParticleEffect` is a bare component**, not a bundle. `ParticleEffectBundle` was removed in 0.18. Spawn `ParticleEffect::new(handle)` alongside `Transform::default()` + `Visibility::default()`; the `#[require(...)]` attribute fills in `CompiledParticleEffect`, `VisibilityClass`, `SyncToRenderWorld`.
+- **`SpawnerSettings::rate(...)` — not `Spawner::rate`.** The `Spawner` struct does NOT exist in `bevy_hanabi 0.19`. The whole emission API is on `SpawnerSettings`.
+- **`ParticleEffect` is a bare component**, not a bundle. `ParticleEffectBundle` is not used in 0.19. Spawn `ParticleEffect::new(handle)` alongside `Transform::default()` + `Visibility::default()`; the `#[require(...)]` attribute fills in `CompiledParticleEffect`, `VisibilityClass`, `SyncToRenderWorld`.
 - **`ExprWriter::lit(v)` returns `WriterExpr`, NOT `ExprHandle`.** Call `.expr()` to get the `ExprHandle` that modifier fields expect.
 - **`ColorOverLifetimeModifier` requires `Attribute::AGE` to be initialized** alongside `LIFETIME`. Omitting `AGE` causes a runtime shader error reading undefined memory.
-- **`bevy_hanabi::Gradient` name-collides with `bevy::prelude::Gradient`** — the latter is `bevy_ui`'s CSS gradient enum added in 0.18. Do NOT `use bevy_hanabi::prelude::*` blindly. Either list specific imports (see the snippet above) or qualify `Gradient` everywhere.
-- **WebGPU only.** Both `bevy_hanabi` and `bevy_spark` require compute shaders / WebGPU. WebGL2 builds will fail. Target `wasm32-unknown-unknown` with Bevy's `webgpu` feature, not `webgl2`. See `bevy-wasm-webgpu`.
+- **`bevy_hanabi::Gradient` name-collides with `bevy::prelude::Gradient`** — the latter is `bevy_ui`'s CSS gradient enum added in 0.19. Do NOT `use bevy_hanabi::prelude::*` blindly. Either list specific imports (see the snippet above) or qualify `Gradient` everywhere.
+- **WebGPU only.** `bevy_hanabi` and `bevy_spark` require compute shaders / WebGPU. WebGL2 builds will fail. Target `wasm32-unknown-unknown` with Bevy's `webgpu` feature, not `webgl2`. See `bevy-wasm-webgpu`.
 - **`bevy_spark` loads `.spz` files**, not `.ply` or `.splat` — convert via the `gsplat` Python toolchain or similar capture-pipeline tools. The crate ships an `SpzLoader` asset loader.
 - **Splat colour is baked.** Gaussian-splat scenes don't respond to Bevy lighting. If you need dynamic lighting on a captured scene, you need a different representation.
-- **`bevy_prototype_lyon` is abandoned for 0.18.** Don't reach for it — last release pins 0.17. Use `bevy_vector_shapes 0.12.0` instead for stylised geometric SFX.
-- **No 0.18-ready trail or decal crate exists.** Hand-roll or use `bevy_vector_shapes` for trails. Decals: custom material + alpha blending.
+- **`bevy_prototype_lyon` is abandoned for current Bevy releases.** Don't reach for it — last release pins 0.17. Use `bevy_vector_shapes 0.12.0` instead for stylised geometric SFX.
+- **No verified Bevy 0.19-ready trail or decal crate exists.** Hand-roll or use `bevy_vector_shapes` for trails. Decals: custom material + alpha blending.
 
 ## See also
 
-- [`bevy-pbr-materials`](../bevy-pbr-materials/SKILL.md) — required for the custom-`Material` + WGSL shader path; covers the 0.18 `AsBindGroup::label()` requirement.
+- [`bevy-pbr-materials`](../bevy-pbr-materials/SKILL.md) — required for the custom-`Material` + WGSL shader path; covers the `AsBindGroup::label()` requirement.
 - [`bevy-cameras`](../bevy-cameras/SKILL.md) — camera framing for VFX composition; especially relevant for Gaussian-splat scenes where camera *is* the user experience.
 - [`bevy-wasm-webgpu`](../bevy-wasm-webgpu/SKILL.md) — the WebGPU caveat: hanabi and splats both require WebGPU; neither runs on WebGL2.
 - [`bevy-animation`](../bevy-animation/SKILL.md) — `EasingCurve` / `EaseFunction` toolkit if you want simple procedural FX without particles.

@@ -1,15 +1,15 @@
 ---
 name: bevy-core-concepts
-description: Use when wiring up an `App`, writing a `Plugin`, choosing between `Update` and `FixedUpdate`, ordering `Startup`/`PreUpdate`/`PostUpdate`, or writing an exclusive system (`fn(&mut World)`) in Bevy 0.18. Covers the schedule graph, run order, and the `SimpleExecutor` removal.
+description: Use when wiring up an `App`, writing a `Plugin`, choosing between `Update` and `FixedUpdate`, ordering `Startup`/`PreUpdate`/`PostUpdate`, or writing an exclusive system (`fn(&mut World)`) in Bevy 0.19. Covers the schedule graph, run order, and the `SimpleExecutor` removal.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Core concepts (App, Plugin, Schedule, World)
+# Bevy 0.19 — Core concepts (App, Plugin, Schedule, World)
 
 ## When to use this skill
 
@@ -22,6 +22,11 @@ metadata:
 ## Canonical pattern
 
 ```rust
+//! `bevy-core-concepts` skill — Plugin, schedules, exclusive system in 0.19.
+//!
+//! Demonstrates `App::add_plugins` + `Plugin::build`, `Startup`/`Update`/`FixedUpdate`/`PostUpdate`,
+//! `.chain()` ordering, and an exclusive `fn(&mut World)`.
+
 use bevy::prelude::*;
 
 fn main() {
@@ -39,7 +44,8 @@ impl Plugin for GamePlugin {
             .add_systems(Startup, spawn_world)
             .add_systems(Update, (read_input, apply_gravity).chain())
             .add_systems(FixedUpdate, simulate_physics)
-            .add_systems(PostUpdate, sync_transforms);
+            .add_systems(PostUpdate, sync_transforms)
+            .add_systems(PostUpdate, rebuild_index);
     }
 }
 
@@ -55,7 +61,7 @@ fn apply_gravity(_t: Res<Time>) {}
 fn simulate_physics(_t: Res<Time<Fixed>>) {}
 fn sync_transforms(_q: Query<&mut Transform>) {}
 
-// Exclusive system — full mutable World access, runs alone.
+/// Exclusive system — full mutable World access, runs alone.
 fn rebuild_index(world: &mut World) {
     let count = world.entities().len();
     world.insert_resource(EntityCount(count));
@@ -78,7 +84,7 @@ struct EntityCount(u32);
 
 **Rule of thumb:** if a system must produce the same result for the same inputs regardless of frame rate, put it in `FixedUpdate`. Otherwise `Update`.
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`SimpleExecutor` was removed.** If two systems in the same schedule both touch the same data, the schedule no longer guesses an order — it panics. Make order explicit with `.before(other)`, `.after(other)`, `.chain()`, or `.in_set(MySet)`.
 - **`ScheduleBuildError` variants were renamed.** If you `match` on them, update: `HierarchyLoop` → `HierarchySort(DiGraphToposortError::Loop(...))`, `DependencyCycle` → `DependencySort(DiGraphToposortError::Cycle(...))`.

@@ -1,15 +1,15 @@
 ---
 name: bevy-wasm-webgpu
-description: Use when targeting `wasm32-unknown-unknown`, picking between the `webgl2` and `webgpu` Bevy features, configuring `wasm-bindgen` glue, sizing down the bundle via `default-features = false`, or hitting "asset 404" errors caused by relative path handling in the browser. Covers Bevy 0.18 WASM build pipeline.
+description: Use when targeting `wasm32-unknown-unknown`, picking between the `webgl2` and `webgpu` Bevy features, configuring `wasm-bindgen` glue, sizing down the bundle via `default-features = false`, or hitting "asset 404" errors caused by relative path handling in the browser. Covers Bevy 0.19 WASM build pipeline.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: platform
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — WASM + WebGPU
+# Bevy 0.19 — WASM + WebGPU
 
 ## When to use this skill
 
@@ -28,7 +28,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18", default-features = false, features = [
+bevy = { version = "0.19", default-features = false, features = [
     # Bring just the renderer + window plumbing.
     "3d_api",
     "bevy_winit",
@@ -37,7 +37,7 @@ bevy = { version = "0.18", default-features = false, features = [
     # current Chrome / Firefox / Safari versions.
     "webgl2",
     # "webgpu",
-    # Input — input is NOT in default-features = false anymore in 0.18.
+    # Input — input is NOT in default-features = false anymore in 0.19.
     "mouse",
     "keyboard",
     "touch",
@@ -124,7 +124,7 @@ fn main() {
 
 ## Source-confirmed scope
 
-This skill covers the parts of the WASM workflow that are uncontroversial and stable in 0.18. The Bevy 0.18 release notes did not call out WASM-specific renderer changes; the migration story is mostly the same Cargo-features rename as for native (`animation` → `gltf_animation`, etc. — see `bevy-cargo-features`).
+This skill covers the parts of the WASM workflow that are uncontroversial and stable in 0.19. The Bevy 0.19 release notes did not call out WASM-specific renderer changes; the migration story is mostly the same Cargo-features rename as for native (`animation` → `gltf_animation`, etc. — see `bevy-cargo-features`).
 
 ## See also
 

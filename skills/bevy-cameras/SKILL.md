@@ -1,15 +1,15 @@
 ---
 name: bevy-cameras
-description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.18 camera spawning, render targets, and built-in controllers.
+description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.19 camera spawning, render targets, and built-in controllers.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Cameras
+# Bevy 0.19 — Cameras
 
 ## When to use this skill
 
@@ -24,19 +24,35 @@ metadata:
 `FreeCamera`/`PanCamera` are gated behind Cargo features. In `Cargo.toml`:
 
 ```toml
-bevy = { version = "0.18", features = ["free_camera", "pan_camera"] }
+bevy = { version = "0.19", features = ["free_camera", "pan_camera"] }
 ```
 
 ```rust
-use bevy::asset::RenderAssetUsages;
-use bevy::camera::RenderTarget;
-use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin};
-use bevy::prelude::*;
+//! `bevy-cameras` skill — Camera3d, FreeCamera, RenderTarget, AmbientLight (0.19).
+//!
+//! `RenderTarget` is its own component in 0.18+ (not `Camera.target`).
+//! `AmbientLight` is a per-camera component; world default lives in
+//! `GlobalAmbientLight`. `FreeCamera` needs its plugin AND Cargo feature.
+
+use bevy::{
+    asset::RenderAssetUsages,
+    camera::RenderTarget,
+    camera_controller::free_camera::{
+        FreeCamera,
+        FreeCameraPlugin,
+    },
+    light::GlobalAmbientLight,
+    prelude::*,
+};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(FreeCameraPlugin) // adds the input wiring
+        .add_plugins(FreeCameraPlugin)
+        .insert_resource(GlobalAmbientLight {
+            brightness: 200.0,
+            ..default()
+        })
         .add_systems(Startup, setup)
         .run();
 }
@@ -62,17 +78,18 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
         RenderAssetUsages::default(),
     );
-    image.texture_descriptor.usage =
-        bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
-            | bevy::render::render_resource::TextureUsages::COPY_DST
-            | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
+    image.texture_descriptor.usage = bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
+        | bevy::render::render_resource::TextureUsages::COPY_DST
+        | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
     let image_handle = images.add(image);
 
-    // 3. A second camera that draws into the texture.
-    //    RenderTarget is now a *separate* component, not Camera.target.
+    // 3. Second camera drawing into the texture.
     commands.spawn((
         Camera3d::default(),
-        Camera { order: -1, ..default() }, // -1 = render before the main camera
+        Camera {
+            order: -1,
+            ..default()
+        },
         RenderTarget::Image(image_handle.into()),
         Transform::from_xyz(10.0, 5.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
@@ -118,7 +135,7 @@ commands.spawn((Camera3d::default(), AmbientLight { brightness: 1000.0, ..defaul
 # }
 ```
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`RenderTarget` is a separate component.** `Camera { target: RenderTarget::Image(...) }` is gone — wrong shape in 0.18. Spawn it alongside `Camera3d` / `Camera`.
 - **`AmbientLight` is no longer a `Resource`.** It's a per-camera component. The world default lives in the `GlobalAmbientLight` resource.

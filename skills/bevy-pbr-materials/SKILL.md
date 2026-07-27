@@ -1,15 +1,15 @@
 ---
 name: bevy-pbr-materials
-description: Use when spawning a mesh with `StandardMaterial`, writing a custom `Material` with `AsBindGroup` and a required `label()` (new in 0.18), wiring `MaterialPlugin<M>` whose `prepass_enabled`/`shadows_enabled` config moved to trait methods, or chasing visual shifts caused by the 0.18 PBR shading fix. Covers Bevy 0.18 PBR materials.
+description: Use when spawning a mesh with `StandardMaterial`, writing a custom `Material` with `AsBindGroup` and a required `label()` (new in 0.18), wiring `MaterialPlugin<M>` whose `prepass_enabled`/`shadows_enabled` config moved to trait methods, or chasing visual shifts caused by the 0.18 PBR shading fix. Covers Bevy 0.19 PBR materials.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — PBR Materials
+# Bevy 0.19 — PBR Materials
 
 ## When to use this skill
 
@@ -22,6 +22,11 @@ metadata:
 ## Canonical pattern — StandardMaterial
 
 ```rust
+//! `bevy-pbr-materials` skill — `StandardMaterial`, `Mesh3d`/`MeshMaterial3d`, lights.
+//!
+//! In 0.19 the renderer queries `Mesh3d` + `MeshMaterial3d` wrappers.
+//! `Color::rgb(...)` is gone — use `Color::srgb(...)`.
+
 use bevy::prelude::*;
 
 fn main() {
@@ -62,7 +67,7 @@ fn setup(
 }
 ```
 
-## Custom Material — 0.18 shape
+## Custom Material — 0.19 shape
 
 Custom materials with the `Material` trait and `AsBindGroup` are covered in
 detail at [references/custom-material.md](references/custom-material.md).
@@ -75,7 +80,7 @@ detail at [references/custom-material.md](references/custom-material.md).
 | `Plane3d`, `Cuboid`, `Sphere`, `Circle`, `Cylinder`, `Capsule3d`, `Torus` constructors and orientation gotchas | [references/mesh-primitives.md](references/mesh-primitives.md) |
 | `Material` trait methods, `AsBindGroup` attributes, `ShaderRef` variants, `MaterialPlugin` wiring | [references/custom-material.md](references/custom-material.md) |
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`MaterialPlugin::<M> { prepass_enabled, shadows_enabled, ..default() }` is gone.** Override the `Material` trait methods instead — see [references/custom-material.md](references/custom-material.md).
 - **`AsBindGroup::label()` is required.** The `#[derive(AsBindGroup)]` macro generates it automatically; hand-rolled impls must add it.

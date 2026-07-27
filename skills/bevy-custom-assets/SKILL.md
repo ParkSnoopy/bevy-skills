@@ -1,15 +1,15 @@
 ---
 name: bevy-custom-assets
-description: Use when implementing `AssetLoader` for a custom file format, depending on other assets via `LoadContext::loader().with_settings(..).load(..)`, hitting the 0.18 requirement to `#[derive(TypePath)]` on the loader, or using `reader.read_to_end(..)` / `seekable()` async access. Covers Bevy 0.18 custom asset loaders.
+description: Use when implementing `AssetLoader` for a custom file format, depending on other assets via `LoadContext::loader().with_settings(..).load(..)`, hitting the 0.18 requirement to `#[derive(TypePath)]` on the loader, or using `reader.read_to_end(..)` / `seekable()` async access. Covers Bevy 0.19 custom asset loaders.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: asset
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Custom asset loaders
+# Bevy 0.19 — Custom asset loaders
 
 ## When to use this skill
 
@@ -21,10 +21,23 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::asset::io::Reader;
-use bevy::asset::{Asset, AssetApp, AssetLoader, LoadContext};
-use bevy::prelude::*;
-use bevy::reflect::TypePath;
+//! `bevy-custom-assets` skill — an `AssetLoader` for a custom RON level format.
+//!
+//! In 0.19 the loader struct still must `#[derive(TypePath)]`, and
+//! `LoadContext::path()` still returns `AssetPath` (use `.path()` on it for the
+//! platform path). `reader.read_to_end` is the basic async reader API.
+
+use bevy::{
+    asset::{
+        Asset,
+        AssetApp,
+        AssetLoader,
+        LoadContext,
+        io::Reader,
+    },
+    prelude::*,
+    reflect::TypePath,
+};
 use serde::Deserialize;
 use thiserror::Error;
 
@@ -32,10 +45,10 @@ use thiserror::Error;
 pub struct LevelDef {
     pub name: String,
     pub gravity: f32,
-    pub thumbnail: String, // path to a referenced texture asset
+    pub thumbnail: String,
 }
 
-#[derive(TypePath)] // 0.18: required on the loader itself.
+#[derive(TypePath)]
 pub struct LevelLoader;
 
 #[derive(Debug, Error)]
@@ -57,15 +70,13 @@ impl AssetLoader for LevelLoader {
         _settings: &Self::Settings,
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
-        // Pull the whole file. For very large files prefer `seekable()`.
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
         let level: LevelDef = ron::de::from_bytes(&bytes)?;
-
-        // Pull in a referenced asset so it loads alongside this one.
-        // The resulting handle ends up tracked as a dependency.
+        // Track the referenced texture as a dependency so
+        // `AssetEvent::LoadedWithDependencies` fires correctly.
         let _: Handle<Image> = load_context.load(&level.thumbnail);
-
+        let _ = load_context.path().path(); // AssetPath -> platform path
         Ok(level)
     }
 
@@ -80,6 +91,23 @@ impl Plugin for LevelLoaderPlugin {
         app.init_asset::<LevelDef>()
             .register_asset_loader(LevelLoader);
     }
+}
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_plugins(LevelLoaderPlugin)
+        .add_systems(Startup, request_level)
+        .run();
+}
+
+#[derive(Resource)]
+struct LevelHandle(Handle<LevelDef>);
+
+fn request_level(asset_server: Res<AssetServer>, mut commands: Commands) {
+    let handle: Handle<LevelDef> = asset_server.load("levels/example.level.ron");
+    commands.insert_resource(LevelHandle(handle));
+    commands.spawn(Camera3d::default());
 }
 ```
 
@@ -102,7 +130,7 @@ match reader.seekable() {
 # }
 ```
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`#[derive(TypePath)]` is required on the loader struct** (not just the asset). 0.18 enforces this so loaders can be reflected. Without it: "`MyLoader: TypePath` is not implemented".
 - **`LoadContext::path()` returns `AssetPath`**, not `&Path`. To get the platform path, use `.path()` on it: `ctx.path().path()`.

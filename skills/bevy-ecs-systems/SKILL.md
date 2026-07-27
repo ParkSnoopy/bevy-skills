@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-systems
-description: Use when deriving `SystemParam`, grouping with `SystemSet`, gating execution with `.run_if(on_message::<M>())` / `in_state(...)` / `resource_exists::<R>`, ordering with `.before`/`.after`/`.chain()`, or removing systems at runtime with `remove_systems_in_set` (new in 0.18). Covers Bevy 0.18 system params, sets, and run conditions.
+description: Use when deriving `SystemParam`, grouping with `SystemSet`, gating execution with `.run_if(on_message::<M>())` / `in_state(...)` / `resource_exists::<R>`, ordering with `.before`/`.after`/`.chain()`, or removing systems at runtime with `remove_systems_in_set` (new in 0.18). Covers Bevy 0.19 system params, sets, and run conditions.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Systems (params, sets, run conditions)
+# Bevy 0.19 — ECS Systems (params, sets, run conditions)
 
 ## When to use this skill
 
@@ -23,26 +23,43 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::ecs::system::SystemParam;
-use bevy::prelude::*;
+//! `bevy-ecs-systems` skill — `SystemParam`, `SystemSet`, `States`, `Message`, run conditions.
+//!
+//! Buffered events are `Message`s in 0.19 (renamed from `Event` in 0.17).
+//! `MessageReader`/`MessageWriter` replace `EventReader`/`EventWriter`.
+
+use bevy::{
+    ecs::system::SystemParam,
+    prelude::*,
+};
 
 #[derive(SystemSet, Hash, PartialEq, Eq, Clone, Debug)]
-enum GameLoop { Input, Simulate, Render }
+enum GameLoop {
+    Input,
+    Simulate,
+    Render,
+}
 
 #[derive(States, Default, Hash, PartialEq, Eq, Clone, Debug)]
-enum AppState { #[default] Loading, Playing }
+enum AppState {
+    #[default]
+    Loading,
+    Playing,
+}
 
 #[derive(Resource, Default)]
 struct Score(u32);
 
 #[derive(Message)]
-struct GoalScored { team: u8 }
+struct GoalScored {
+    team: u8,
+}
 
-// Composite param: pass one argument, get four.
+// Composite param: one argument, four params inside.
 // 'w = world borrow; 's = system-local state borrow.
 #[derive(SystemParam)]
 struct GameCtx<'w, 's> {
-    time:  Res<'w, Time>,
+    time: Res<'w, Time>,
     score: ResMut<'w, Score>,
     goals: MessageReader<'w, 's, GoalScored>,
 }
@@ -53,10 +70,11 @@ fn main() {
         .init_resource::<Score>()
         .add_message::<GoalScored>()
         .init_state::<AppState>()
-        .configure_sets(Update, (GameLoop::Input, GameLoop::Simulate, GameLoop::Render).chain())
-        // State schedule: fires once when entering Playing.
+        .configure_sets(
+            Update,
+            (GameLoop::Input, GameLoop::Simulate, GameLoop::Render).chain(),
+        )
         .add_systems(OnEnter(AppState::Playing), spawn_level)
-        // State schedule: fires once when leaving Playing.
         .add_systems(OnExit(AppState::Playing), despawn_level)
         .add_systems(Update, read_input.in_set(GameLoop::Input))
         .add_systems(
@@ -66,6 +84,10 @@ fn main() {
                 .run_if(on_message::<GoalScored>),
         )
         .add_systems(Update, draw_hud.in_set(GameLoop::Render))
+        .add_systems(
+            Update,
+            promote_to_playing.run_if(in_state(AppState::Loading)),
+        )
         .run();
 }
 
@@ -77,7 +99,9 @@ fn spawn_level(mut commands: Commands) {
 }
 
 fn despawn_level(mut commands: Commands, query: Query<Entity, With<LevelEntity>>) {
-    for e in &query { commands.entity(e).despawn(); }
+    for e in &query {
+        commands.entity(e).despawn();
+    }
 }
 
 fn read_input(mut writer: MessageWriter<GoalScored>) {
@@ -92,7 +116,14 @@ fn tally_goals(mut ctx: GameCtx) {
     }
 }
 
-fn draw_hud(score: Res<Score>) { let _ = score.0; }
+fn draw_hud(score: Res<Score>) {
+    let _ = score.0;
+}
+
+// Transition Loading -> Playing after a beat so OnEnter(Playing) fires.
+fn promote_to_playing(mut next: ResMut<NextState<AppState>>) {
+    next.set(AppState::Playing);
+}
 ```
 
 ## Run condition cheat sheet
@@ -119,7 +150,7 @@ Combine with `.and()` / `.or()`: `run_if(in_state(GameState::Playing).and(resour
 | `.before`, `.after`, `.chain()`, `.ambiguous_with`, debugging ambiguity errors | [references/ordering.md](references/ordering.md) |
 | `remove_systems_in_set`, `ScheduleCleanupPolicy`, 3-arg vs 4-arg receivers, side-effect limits | [references/runtime-removal.md](references/runtime-removal.md) |
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`SimpleExecutor` is gone.** Any ambiguity between systems sharing data is now a build-time error. Fix with `.before`, `.after`, `.chain()`, or `.ambiguous_with(other)` (explicit accept). See [references/ordering.md](references/ordering.md).
 - **`MessageReader` / `MessageWriter`, not `EventReader` / `EventWriter`.** Renamed in 0.17. Trait derive is `#[derive(Message)]`; registrar is `app.add_message::<M>()`.

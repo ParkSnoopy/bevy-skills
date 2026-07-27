@@ -1,20 +1,20 @@
 ---
 name: bevy-porting
-description: Use when porting a game project to Bevy 0.18 from another engine — Unity (Prefab, MonoBehaviour, Animator, UGUI), Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker — and need a mapping of each engine's primitives to Bevy equivalents, plus inventory/extraction scripts to pull assets out of the source project.
+description: Use when porting a game project to Bevy 0.19 from another engine — Unity (Prefab, MonoBehaviour, Animator, UGUI), Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker — and need a mapping of each engine's primitives to Bevy equivalents, plus inventory/extraction scripts to pull assets out of the source project.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "4"
   area: porting
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Porting from other engines
+# Bevy 0.19 — Porting from other engines
 
 ## When to use this skill
 
-- Starting a port of an existing game from Unity, Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker into Bevy 0.18.
-- Evaluating feasibility — does my engine's feature X have a Bevy equivalent in 0.18?
+- Starting a port of an existing game from Unity, Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker into Bevy 0.19.
+- Evaluating feasibility — does my engine's feature X have a Bevy equivalent in 0.19?
 - Deciding which subsystem to port first (we recommend: rendering + a single playable slice).
 - Extracting asset and scene data **from the source engine's project tree without needing the source engine installed** — see the `scripts/` policy below.
 - Replacing engine-specific build pipelines (Unity Build Settings, Unreal Build Configuration, etc.) with `cargo` + `Cargo.toml` features.
@@ -90,10 +90,10 @@ These show up regardless of source engine:
 
 ## See also
 
-- [`bevy`](../bevy/SKILL.md) — router; pins Bevy 0.18 and indexes every sibling skill.
+- [`bevy`](../bevy/SKILL.md) — router; pins Bevy 0.19 and indexes every sibling skill.
 - [`bevy-animation`](../bevy-animation/SKILL.md) — `AnimationGraph`, `AnimationTransitions`, `#[derive(AnimationEvent)]`. Cross-linked from `unity-animation.md`.
 - [`bevy-ui`](../bevy-ui/SKILL.md) — `Node` + Taffy/flex model. Cross-linked from `unity-ui.md`.
 - [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md) — replaces Unity Build Settings / PlayerSettings.
 - [`bevy-wasm-webgpu`](../bevy-wasm-webgpu/SKILL.md) — Unity WebGL → wasm32 / WebGPU port story.
-- [`bevy-cameras`](../bevy-cameras/SKILL.md) — `RenderTarget` as a component (0.18), camera modes; close to Unity Camera component.
+- [`bevy-cameras`](../bevy-cameras/SKILL.md) — `RenderTarget` as a component, camera modes; close to Unity Camera component.
 - [`bevy-migration-0-17-to-0-18`](../bevy-migration-0-17-to-0-18/SKILL.md) — useful if you find a tutorial pinned to a pre-0.18 release.

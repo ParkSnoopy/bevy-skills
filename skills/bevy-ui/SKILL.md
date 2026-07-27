@@ -1,15 +1,15 @@
 ---
 name: bevy-ui
-description: Use when building UI with `Node`, `Button`, `children![]`, `TextFont`, `InputFocus`, `BackgroundColor`, `BorderColor`, or `BorderRadius` in Bevy 0.18. Covers layout, text styling, interaction handling, colors, palettes, accessibility, and the frame-0 `Changed<Interaction>` invariant.
+description: Use when building UI with `Node`, `Button`, `children![]`, `TextFont`, `InputFocus`, `BackgroundColor`, `BorderColor`, or `BorderRadius` in Bevy 0.19. Covers layout, text styling, interaction handling, colors, palettes, accessibility, and the frame-0 `Changed<Interaction>` invariant.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: ui
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — UI
+# Bevy 0.19 — UI
 
 ## When to use this skill
 
@@ -27,7 +27,28 @@ metadata:
 Centered button — full-screen flex container, rounded pill button, text child.
 
 ```rust
-use bevy::{input_focus::InputFocus, prelude::*};
+//! `bevy-ui` skill — `Node`, `Button`, `TextFont` (0.19 `FontSource` + `FontSize::Px`).
+//!
+//! 0.19 text backend swap (cosmic-text -> Parley/fontique) made the following
+//! changes vs 0.18:
+//!   * `TextFont::font` is `FontSource`, not `Handle<Font>`. `From<Handle<Font>>`
+//!     is implemented, so `.into()` adapts the load call.
+//!   * `TextFont::font_size` is `FontSize::Px(24.0)`, not a bare `f32`.
+//!   * `TextLayout::justify(j)` / `::linebreak(..)` / `::no_wrap()` replace
+//!     `new_with_justify` / `new_with_linebreak` / `new_with_no_wrap`.
+//!
+//! Frame-0 `Changed<Interaction>` invariant still applies: the spawn-time
+//! `BorderColor` is what shows at frame 0 (the `Interaction::None` arm only
+//! runs after the first mouse event), so set it to the colour you want at
+//! spawn to avoid a frame-0 mismatch.
+
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -60,17 +81,15 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 border_radius: BorderRadius::MAX,
                 ..default()
             },
-            // Spawn-time border is what appears at frame 0 — `Changed<Interaction>`
-            // does NOT fire on startup, so the `Interaction::None` arm below
-            // (which sets the border to BLACK) only runs after the first mouse
-            // event. This is the frame-0 invariant: see Gotchas #1 + references/gotchas.md.
-            BorderColor::all(Color::WHITE),
+            // Spawn-time border is what shows at frame 0 — `Changed<Interaction>`
+            // does NOT fire on startup, so set the colour you want at spawn.
+            BorderColor::all(Color::BLACK),
             BackgroundColor(Color::BLACK),
             children![(
                 Text::new("Button"),
                 TextFont {
-                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                    font_size: 33.0,
+                    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(), // Handle<Font> -> FontSource via From
+                    font_size: FontSize::Px(33.0), // 0.19: FontSize, not bare f32
                     ..default()
                 },
                 TextColor(Color::srgb(0.9, 0.9, 0.9)),
@@ -83,20 +102,26 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
     mut query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut BorderColor, &mut Button),
+        (
+            Entity,
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Button,
+        ),
         Changed<Interaction>,
     >,
 ) {
     for (entity, interaction, mut bg, mut border, mut button) in &mut query {
         match *interaction {
             Interaction::Pressed => {
-                input_focus.set(entity);
+                input_focus.set(entity, FocusCause::Navigated);
                 *bg = BackgroundColor(Color::srgb(0.35, 0.75, 0.35));
                 *border = BorderColor::all(Color::srgb(1.0, 0.0, 0.0));
                 button.set_changed(); // signal accessibility system
             }
             Interaction::Hovered => {
-                input_focus.set(entity);
+                input_focus.set(entity, FocusCause::Navigated);
                 *bg = BackgroundColor(Color::srgb(0.25, 0.25, 0.25));
                 *border = BorderColor::all(Color::WHITE);
                 button.set_changed();

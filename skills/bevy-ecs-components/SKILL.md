@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-components
-description: Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, writing observers with `On<E>` (NOT `Trigger<E>` — renamed in 0.17), choosing between Table and SparseSet storage, or registering `on_add`/`on_remove` hooks in Bevy 0.18.
+description: Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, writing observers with `On<E>` (NOT `Trigger<E>` — renamed in 0.17), choosing between Table and SparseSet storage, or registering `on_add`/`on_remove` hooks in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Components
+# Bevy 0.19 — ECS Components
 
 ## When to use this skill
 
@@ -22,6 +22,11 @@ metadata:
 ## Canonical pattern
 
 ```rust
+//! `bevy-ecs-components` skill — components, `#[require(...)]`, `On<E>` observers.
+//!
+//! `Trigger<E>` was renamed to `On<E>` in 0.17 and stays that way in 0.19.
+//! `EntityEvent` is still the derive for entity-targeted observed events.
+
 use bevy::prelude::*;
 
 // 1. Plain components.
@@ -31,23 +36,20 @@ struct Health(f32);
 #[derive(Component)]
 struct Velocity(Vec3);
 
-// 2. Required components — spawning `Player` auto-spawns the rest.
-//    `#[require]` calls each form: `Type` (Default), `Type::ctor(...)`, or
-//    `Type = expression`.
+// 2. Required components — spawning `Player` auto-inserts the rest.
 #[derive(Component)]
 #[require(Health = Health(100.0), Velocity = Velocity(Vec3::ZERO), Transform)]
 struct Player;
 
-// 3. Sparse storage for components added/removed every frame (e.g. tags
-//    flipped by gameplay). Default Table storage is faster to iterate.
+// 3. Sparse storage for tags flipped every frame.
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 struct Stunned;
 
-// 4. An entity-targeted event reacted to by observers.
+// 4. Entity-targeted event for observers.
 #[derive(EntityEvent)]
 struct Damage {
-    entity: Entity, // EntityEvent requires an `entity` field.
+    entity: Entity,
     amount: f32,
 }
 
@@ -66,7 +68,10 @@ fn spawn_player(mut commands: Commands) {
 
 fn deal_damage(mut commands: Commands, query: Query<Entity, With<Player>>) {
     for entity in &query {
-        commands.trigger(Damage { entity, amount: 10.0 });
+        commands.trigger(Damage {
+            entity,
+            amount: 10.0,
+        });
     }
 }
 
@@ -79,7 +84,7 @@ fn on_damage(damage: On<Damage>, mut query: Query<&mut Health>) {
 }
 ```
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`Trigger<E>` is gone.** Observer params are `On<E>` in 0.17+. Methods: `event()`, `event_mut()`, `observer()`, `original_event_target()`, `propagate(bool)`.
 - **`EntityEvent::set_target`** requires `use bevy::ecs::entity::SetEntityEventTarget;` — not in the prelude.

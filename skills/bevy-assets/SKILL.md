@@ -1,15 +1,15 @@
 ---
 name: bevy-assets
-description: Use when loading anything with `AssetServer`, holding a `Handle<T>`, indexing `Assets<T>`, enabling hot-reload via `AssetPlugin { watch_for_changes_override: Some(true), .. }`, or chasing the 0.18 `LoadContext::path -> AssetPath` and `SeekableReader` changes. Covers Bevy 0.18 asset loading.
+description: Use when loading anything with `AssetServer`, holding a `Handle<T>`, indexing `Assets<T>`, enabling hot-reload via `AssetPlugin { watch_for_changes_override: Some(true), .. }`, or chasing the 0.18 `LoadContext::path -> AssetPath` and `SeekableReader` changes. Covers Bevy 0.19 asset loading.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: asset
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Assets
+# Bevy 0.19 — Assets
 
 ## When to use this skill
 
@@ -22,7 +22,15 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::prelude::*;
+//! `bevy-assets` skill — AssetServer, `Assets<T>`, `AssetEvent::LoadedWithDependencies`.
+//!
+//! `AssetEvent<T>` is a `Message` in 0.19: iterate with `MessageReader<AssetEvent<T>>`,
+//! not `EventReader`. Hot-reload is dev-only.
+
+use bevy::{
+    asset::LoadState,
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -33,32 +41,35 @@ fn main() {
         }))
         .init_resource::<MyHandles>()
         .add_systems(Startup, load_handles)
-        .add_systems(Update, react_to_loads)
+        .add_systems(Update, (react_to_loads, check_readiness))
         .run();
 }
 
 #[derive(Resource, Default)]
 struct MyHandles {
-    hero: Handle<Scene>,
+    hero: Handle<Gltf>,
     bricks: Handle<Image>,
 }
 
 fn load_handles(asset_server: Res<AssetServer>, mut handles: ResMut<MyHandles>) {
-    // GLTF scenes are addressed by sub-asset label.
-    handles.hero = asset_server.load("models/hero.glb#Scene0");
+    handles.hero = asset_server.load("models/hero.glb");
     handles.bricks = asset_server.load("textures/bricks.png");
 }
 
-fn react_to_loads(
-    mut ev: MessageReader<AssetEvent<Image>>,
-    images: Res<Assets<Image>>,
-) {
+fn react_to_loads(mut ev: MessageReader<AssetEvent<Image>>, images: Res<Assets<Image>>) {
     for event in ev.read() {
         if let AssetEvent::LoadedWithDependencies { id } = event {
             if let Some(img) = images.get(*id) {
                 info!("image loaded: {}x{}", img.width(), img.height());
             }
         }
+    }
+}
+
+// `LoadState` is not `PartialEq` in 0.19 — use `matches!` instead of `==`.
+fn check_readiness(asset_server: Res<AssetServer>, handles: Res<MyHandles>) {
+    if matches!(asset_server.load_state(&handles.hero), LoadState::Loaded) {
+        info!("hero gltf ready");
     }
 }
 ```
@@ -91,7 +102,7 @@ if asset_server.load_state(&handles.hero) == LoadState::Loaded {
     // Safe to query Assets<Scene> and use it.
 }
 # }
-# #[derive(Resource)] struct MyHandles { hero: Handle<Scene> }
+# #[derive(Resource)] struct MyHandles { hero: Handle<Gltf> }
 ```
 
 ## Gotchas (0.18)

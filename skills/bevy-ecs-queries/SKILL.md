@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-queries
-description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.18 query patterns.
+description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.19 query patterns.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Queries
+# Bevy 0.19 — ECS Queries
 
 ## When to use this skill
 
@@ -22,6 +22,8 @@ metadata:
 ## Canonical pattern
 
 ```rust
+//! `bevy-ecs-queries` skill — `Query` filters, change detection, `par_iter_mut`, lens.
+
 use bevy::prelude::*;
 
 #[derive(Component, Default)]
@@ -39,16 +41,32 @@ struct Enemy;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_systems(Update, (
-            move_things,
-            on_health_changed,
-            damage_visible_enemies,
-            integrate_in_parallel,
-        ))
+        .add_systems(Startup, populate)
+        .add_systems(
+            Update,
+            (
+                move_things,
+                on_health_changed,
+                damage_visible_enemies,
+                integrate_in_parallel,
+            ),
+        )
         .run();
 }
 
-// Sequential iteration. `&` for read, `&mut` for write.
+fn populate(mut commands: Commands) {
+    commands.spawn((Camera3d::default(), Transform::from_xyz(0.0, 4.0, 8.0)));
+    for i in 0..5 {
+        commands.spawn((
+            Enemy,
+            Health(100.0),
+            Velocity(Vec3::new(i as f32, 0.0, 0.0)),
+            Transform::default(),
+        ));
+    }
+}
+
+// Sequential iteration: `&` read, `&mut` write.
 fn move_things(time: Res<Time>, mut q: Query<(&Velocity, &mut Transform)>) {
     let dt = time.delta_secs();
     for (vel, mut tf) in &mut q {
@@ -56,44 +74,47 @@ fn move_things(time: Res<Time>, mut q: Query<(&Velocity, &mut Transform)>) {
     }
 }
 
-// Change detection. `Changed<T>` triggers on insert OR mutation.
-// `Added<T>` triggers only on insert.
+// Change detection: `Changed<T>` fires on insert or mutation.
 fn on_health_changed(q: Query<(Entity, &Health), Changed<Health>>) {
     for (entity, hp) in &q {
-        info!("entity {:?} now has {} hp", entity, hp.0);
+        info!("entity {entity:?} now has {} hp", hp.0);
     }
 }
 
-// Combined filters. `With`/`Without` constrain entities;
-// `Or<(...)>` alternates over filters (not components).
+// Combined filters: `With`/`Without` constrain entities; `Or<(...)>`
+// alternates over filters (not raw component types).
 fn damage_visible_enemies(
-    mut q: Query<&mut Health, (With<Enemy>, Without<Player>, Or<(Added<Enemy>, Changed<Transform>)>)>,
+    mut q: Query<
+        &mut Health,
+        (
+            With<Enemy>,
+            Without<Player>,
+            Or<(Added<Enemy>, Changed<Transform>)>,
+        ),
+    >,
 ) {
     for mut hp in &mut q {
         hp.0 -= 1.0;
     }
 }
 
-// Parallel iteration. Use when N is large (>10k) and per-entity work is non-trivial.
-// Cannot use `Commands` or external mutable state — task pool runs items in parallel.
+// Parallel iteration. Can't use `Commands` or external mutable state
+// — task pool runs items in parallel.
 fn integrate_in_parallel(mut q: Query<(&Velocity, &mut Transform)>) {
     q.par_iter_mut().for_each(|(vel, mut tf)| {
         tf.translation += vel.0 * 0.016;
     });
 }
 
-// Query lens: temporarily view a query as a narrower one. Useful for
-// passing a stricter query into a helper without re-binding the system's
-// SystemParam list.
+// Query lens: narrow a query to a stricter shape without re-binding.
 #[allow(dead_code)]
 fn use_lens(mut q: Query<(&mut Transform, &Velocity)>) {
-    // Read-only narrowed view of just the Transform column.
     let mut lens = q.transmute_lens::<&Transform>();
     let _read_only: Query<&Transform> = lens.query();
 }
 ```
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`ArchetypeQueryData`** is a new trait that bounds query data types where the exact item count must be known at compile time (e.g. `for_each`-style ergonomics). If you get a "trait `ArchetypeQueryData` not implemented" error, you're using a dynamic query (`FilteredEntityRef`/`FilteredEntityMut`) where a static one is required. Re-shape the query.
 - **`EntityMut::get_components_mut::<(&mut A, &mut B)>()`** is the safe way to grab two `&mut`s out of one entity in 0.18 — returns `Result<_, QueryAccessError>`. Don't reach for `unsafe` `World::get_mut` aliasing tricks.
