@@ -49,6 +49,7 @@ fn setup(mut commands: Commands) {
 | RON block definitions, palette, KTX2 atlas baking | `bevy-voxel-data` |
 | `es-fluent-manager-bevy` i18n — `FluentText<T>`, `BevyFluentText`, `LocaleChangeEvent`, `i18n.toml` | `bevy-fluent` |
 | `Node`, `Button`, `Interaction`, `children![]`, `TextFont`, `InputFocus`, `BorderRadius`, `BackgroundColor` | `bevy-ui` |
+| Procedural 2D maps, terrain, or cube-sphere planets via `MapPlugin` / `TerrainPlugin` / `PlanetPlugin` in a migrated 0.19 app | `bevy-generative` (git tag `b0.19.0`; not 0.18-compatible) |
 | Detecting copy-paste / near-duplicate Rust code before committing (`similarity-rs --cross-file`) | `similarity-rs` |
 
 ## Cardinal rules (every Bevy 0.18 task)
