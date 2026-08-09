@@ -1,5 +1,17 @@
 {
   "name": "bevy-skills",
-  "owner": "chrisgliddon",
-  "homepage": "https://github.com/chrisgliddon/bevy-skills"
+  "owner": {
+    "name": "chrisgliddon"
+  },
+  "metadata": {
+    "description": "AI agent skills for Bevy 0.18 and Rust maintainability tooling."
+  },
+  "plugins": [
+    {
+      "name": "bevy-skills",
+      "source": "./",
+      "description": "AI agent skills for Bevy 0.18. Teaches agents correct Bevy ECS, rendering, asset, and networking usage.",
+      "homepage": "https://github.com/chrisgliddon/bevy-skills"
+    }
+  ]
 }
