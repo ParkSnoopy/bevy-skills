@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-queries
-description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.18 query patterns.
+description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.19 query patterns.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Queries
+# Bevy 0.19 — ECS Queries
 
 ## When to use this skill
 
@@ -39,12 +39,15 @@ struct Enemy;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_systems(Update, (
-            move_things,
-            on_health_changed,
-            damage_visible_enemies,
-            integrate_in_parallel,
-        ))
+        .add_systems(
+            Update,
+            (
+                move_things,
+                on_health_changed,
+                damage_visible_enemies,
+                integrate_in_parallel,
+            ),
+        )
         .run();
 }
 
@@ -67,7 +70,14 @@ fn on_health_changed(q: Query<(Entity, &Health), Changed<Health>>) {
 // Combined filters. `With`/`Without` constrain entities;
 // `Or<(...)>` alternates over filters (not components).
 fn damage_visible_enemies(
-    mut q: Query<&mut Health, (With<Enemy>, Without<Player>, Or<(Added<Enemy>, Changed<Transform>)>)>,
+    mut q: Query<
+        &mut Health,
+        (
+            With<Enemy>,
+            Without<Player>,
+            Or<(Added<Enemy>, Changed<Transform>)>,
+        ),
+    >,
 ) {
     for mut hp in &mut q {
         hp.0 -= 1.0;

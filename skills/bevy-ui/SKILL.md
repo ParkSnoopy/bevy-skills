@@ -1,15 +1,15 @@
 ---
 name: bevy-ui
-description: Use when building UI with `Node`, `Button`, `children![]`, `TextFont`, `InputFocus`, `BackgroundColor`, `BorderColor`, or `BorderRadius` in Bevy 0.18. Covers layout, text styling, interaction handling, colors, palettes, accessibility, and the frame-0 `Changed<Interaction>` invariant.
+description: Use when building UI with `Node`, `Button`, `children![]`, `TextFont`, `FontSource`, `FontSize`, `InputFocus`, `BackgroundColor`, `BorderColor`, or `BorderRadius` in Bevy 0.19. Covers layout, text styling, interaction handling, colors, palettes, accessibility, and the frame-0 `Changed<Interaction>` invariant.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: ui
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — UI
+# Bevy 0.19 — UI
 
 ## When to use this skill
 
@@ -27,12 +27,17 @@ metadata:
 Centered button — full-screen flex container, rounded pill button, text child.
 
 ```rust
-use bevy::{input_focus::InputFocus, prelude::*};
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .init_resource::<InputFocus>()
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
         .run();
@@ -69,8 +74,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             children![(
                 Text::new("Button"),
                 TextFont {
-                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                    font_size: 33.0,
+                    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(),
+                    font_size: FontSize::Px(33.0),
                     ..default()
                 },
                 TextColor(Color::srgb(0.9, 0.9, 0.9)),
@@ -83,20 +88,26 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
     mut query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut BorderColor, &mut Button),
+        (
+            Entity,
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Button,
+        ),
         Changed<Interaction>,
     >,
 ) {
     for (entity, interaction, mut bg, mut border, mut button) in &mut query {
         match *interaction {
             Interaction::Pressed => {
-                input_focus.set(entity);
+                input_focus.set(entity, FocusCause::Pressed);
                 *bg = BackgroundColor(Color::srgb(0.35, 0.75, 0.35));
                 *border = BorderColor::all(Color::srgb(1.0, 0.0, 0.0));
                 button.set_changed(); // signal accessibility system
             }
             Interaction::Hovered => {
-                input_focus.set(entity);
+                input_focus.set(entity, FocusCause::Navigated);
                 *bg = BackgroundColor(Color::srgb(0.25, 0.25, 0.25));
                 *border = BorderColor::all(Color::WHITE);
                 button.set_changed();
@@ -121,7 +132,7 @@ fn button_system(
 | `Button`, `Interaction`, `Changed<Interaction>`, footguns | [references/interaction.md](references/interaction.md) |
 | `BackgroundColor`, `BorderColor`, `BorderRadius` constructors | [references/colors-and-borders.md](references/colors-and-borders.md) |
 | `bevy::color::palettes::{basic,css,tailwind}` | [references/palettes.md](references/palettes.md) |
-| `InputFocus`, `init_resource`, `set` / `clear` | [references/accessibility.md](references/accessibility.md) |
+| `InputFocus`, `FocusCause`, `set` / `clear` | [references/accessibility.md](references/accessibility.md) |
 | `children![]` vs `.with_children(...)` | [references/children-macro.md](references/children-macro.md) |
 | Cross-cutting invariants, frame-0 trap, black-border bug | [references/gotchas.md](references/gotchas.md) |
 

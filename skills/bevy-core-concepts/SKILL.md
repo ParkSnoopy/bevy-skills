@@ -1,15 +1,15 @@
 ---
 name: bevy-core-concepts
-description: Use when wiring up an `App`, writing a `Plugin`, choosing between `Update` and `FixedUpdate`, ordering `Startup`/`PreUpdate`/`PostUpdate`, or writing an exclusive system (`fn(&mut World)`) in Bevy 0.18. Covers the schedule graph, run order, and the `SimpleExecutor` removal.
+description: Use when wiring up an `App`, writing a `Plugin`, choosing between `Update` and `FixedUpdate`, ordering `Startup`/`PreUpdate`/`PostUpdate`, or writing an exclusive system (`fn(&mut World)`) in Bevy 0.19. Covers the schedule graph, run order, and the 0.18 `SimpleExecutor` removal.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Core concepts (App, Plugin, Schedule, World)
+# Bevy 0.19 — Core concepts (App, Plugin, Schedule, World)
 
 ## When to use this skill
 

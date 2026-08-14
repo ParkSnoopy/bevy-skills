@@ -39,8 +39,15 @@ Do not replace `tag` with a floating branch or an unverified crates.io version. 
 ```rust
 use bevy::prelude::*;
 use bevy_generative::{
-    map::{Map, MapBundle, MapPlugin},
-    noise::{FunctionName, Method},
+    map::{
+        Map,
+        MapBundle,
+        MapPlugin,
+    },
+    noise::{
+        FunctionName,
+        Method,
+    },
 };
 
 fn main() {
@@ -81,7 +88,11 @@ The map plugin writes the generated `Image` to `MapBundle`'s `ImageNode`; it is 
 
 ```rust
 use bevy::prelude::*;
-use bevy_generative::terrain::{Terrain, TerrainBundle, TerrainPlugin};
+use bevy_generative::terrain::{
+    Terrain,
+    TerrainBundle,
+    TerrainPlugin,
+};
 
 fn add_terrain(app: &mut App) {
     app.add_plugins(TerrainPlugin)
@@ -121,7 +132,7 @@ fn add_terrain(app: &mut App) {
 - **`size` and `resolution` multiply terrain work.** Terrain sets its internal noise dimensions to `size * resolution`; reducing just one can still leave expensive generation.
 - **`export: true` is an action flag.** The generator exports once and resets it to `false`. Native export opens an `rfd` save dialog; WASM export creates a browser download. Trigger it from explicit UI input, not on startup.
 - **A git dependency may duplicate Bevy.** Keep the app's `bevy = "0.19"` compatible with the tag. Cargo resolving a second Bevy version makes Bevy types from the two dependency graphs incompatible.
-- **This repository otherwise targets Bevy 0.18.** Do not copy this skill's 0.19 code into an 0.18 application; first complete the migration and validate all third-party dependencies.
+- **This repository defaults to Bevy 0.19.** Do not copy this skill's code into an 0.18 application; first complete the migration and validate all third-party dependencies.
 
 ## See also
 

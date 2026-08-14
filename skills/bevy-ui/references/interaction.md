@@ -1,4 +1,4 @@
-# Bevy 0.18 UI — Interaction
+# Bevy 0.19 UI — Interaction
 
 ## Quick reference
 
@@ -16,25 +16,37 @@
 ### Standard interaction system
 
 ```rust
-use bevy::{input_focus::InputFocus, prelude::*};
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
     mut query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut BorderColor, &mut Button),
+        (
+            Entity,
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Button,
+        ),
         Changed<Interaction>,
     >,
 ) {
     for (entity, interaction, mut bg, mut border, mut button) in &mut query {
         match *interaction {
             Interaction::Pressed => {
-                input_focus.set(entity);
+                input_focus.set(entity, FocusCause::Pressed);
                 *bg = BackgroundColor(Color::srgb(0.35, 0.75, 0.35));
                 *border = BorderColor::all(Color::srgb(1.0, 0.0, 0.0));
                 button.set_changed(); // required — see Pitfalls
             }
             Interaction::Hovered => {
-                input_focus.set(entity);
+                input_focus.set(entity, FocusCause::Navigated);
                 *bg = BackgroundColor(Color::srgb(0.25, 0.25, 0.25));
                 *border = BorderColor::all(Color::WHITE);
                 button.set_changed();

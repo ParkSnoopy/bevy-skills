@@ -6,7 +6,7 @@
 
 Makes a type a **typed Fluent message**. Each variant maps to a Fluent message
 ID (derived from the variant name by converting `PascalCase` to `kebab-case`,
-e.g. `StartGame` → `start-game`). Provides the `ToFluentString` implementation
+e.g. `StartGame` → `start-game`). Provides the `FluentMessage` implementation
 used by the runtime lookup.
 
 ```rust
@@ -48,34 +48,27 @@ commands.spawn((
 
 ---
 
-## The `Component` derive bound
+## The `FluentMessage` bound
 
-`FluentText<T>` is bounded as follows (from
-`es-fluent-manager-bevy-0.18.12/src/registration.rs:27`):
+`FluentText<T>` registration in `es-fluent-manager-bevy 0.19.2` requires:
 
 ```rust
-pub fn register_fluent_text<T>()
+fn register_fluent_text<T>()
 where
-    T: ToFluentString + Clone + Component + Send + Sync + 'static,
+    T: FluentMessage + Clone + Send + Sync + 'static,
 ```
 
-This means your message enum `T` **must also derive `Component`**, even though
-`T` is conceptually "just" a message key. The reason: `FluentText<T>` stores a
-`T` internally, and the inventory machinery uses the `Component` bound to
-satisfy Bevy's ECS type-system constraints when registering the refresh system.
+`FluentText<T>` itself derives Bevy `Component`; its wrapped message type does
+not. `#[derive(EsFluent)]` supplies `FluentMessage`, and
+`#[derive(BevyFluentText)]` supplies automatic system registration.
 
 ```rust
-// All four derives are required for types used with FluentText<T>:
-#[derive(BevyFluentText, Clone, EsFluent, Component)]
+#[derive(BevyFluentText, Clone, EsFluent)]
 #[fluent(namespace = "ui")]
 pub enum UiMessage {
     StartGame,
 }
 ```
-
-Forgetting `Component` produces a trait-bound error at compile time from deep
-inside the `BevyFluentText` expansion — the error message does not always point
-at the missing derive.
 
 ---
 

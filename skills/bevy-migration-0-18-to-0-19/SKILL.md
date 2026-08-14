@@ -19,7 +19,7 @@ metadata:
 - Compiler errors after a `bevy = "0.18"` → `bevy = "0.19"` bump.
 - LLM emits 0.18-era text/font/scene API names from training data.
 - A `#[derive(Resource)]` type suddenly behaves like a component.
-- A third-party crate (`bevy_capture`, etc.) hasn't shipped 0.19 yet.
+- A third-party crate has not shipped a Bevy 0.19-compatible release yet.
 
 ## The renames you'll hit first
 
@@ -28,7 +28,7 @@ metadata:
 ```rust
 // 0.19
 TextLayout::justify(Justify::Left)   // was new_with_justify
-TextLayout::linebreak(/* … */)       // was new_with_linebreak
+TextLayout::linebreak(LineBreak::WordBoundary) // was new_with_linebreak
 TextLayout::no_wrap()                // was new_with_no_wrap
 ```
 
@@ -42,7 +42,10 @@ TextFont {
     ..default()
 }
 // Select by family (needs the `bevy/system_font_discovery` feature for installed fonts):
-TextFont { font: FontSource::family("Fira Sans"), ..default() }
+TextFont {
+    font: FontSource::Family("Fira Sans".into()),
+    ..default()
+}
 ```
 
 0.19 swapped the cosmic-text layout backend for **Parley**, which does font fallback
@@ -101,10 +104,12 @@ lost their `Core` prefix (`CoreScrollbarThumb` → `ScrollbarThumb`,
 
 ## Third-party crates lag the release
 
-`bevy_capture` (the crate behind `bevy-capture`) tracks Bevy and may not have a 0.19
-release yet — **verify a 0.19-compatible version exists before bumping.** When it does,
-`EasyScreenRecordPlugin` gained a required `output_dir: Option<PathBuf>` field
-(only breaks manual struct construction; `..default()` is fine).
+Check every Bevy-coupled package before migrating it. `bevy_capture 0.6.0`,
+`es-fluent-manager-bevy 0.19.2`, `bevy_hanabi 0.19.0`,
+`bevy_spritesheet_animation 7.0.1`, and
+`bevy_vector_shapes 0.13.1` support Bevy 0.19. The `bevy-vfx` skill targets those
+versions while marking `bevy_spark 0.2.0` as an explicit Bevy 0.18-only exception;
+do not combine `bevy_spark` with a Bevy 0.19 dependency graph.
 
 ## Gotchas
 

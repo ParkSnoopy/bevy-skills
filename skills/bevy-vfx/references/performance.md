@@ -16,17 +16,20 @@ particle count or quad screen-area are the highest-impact optimisations.
 
 ## The WASM / WebGPU caveat (most important)
 
-Both `bevy_hanabi 0.18.0` and `bevy_spark 0.2.0` use **compute shaders** internally.
+Both `bevy_hanabi 0.19.0` and the Bevy 0.18-only `bevy_spark 0.2.0` use **compute shaders** internally.
 Compute shaders are WebGPU-only. They will not compile with Bevy's `webgl2` feature.
 
-Build for WebGPU, not WebGL2, when your project uses either crate:
+For Hanabi on Bevy 0.19, enable WebGPU:
 
 ```toml
-# Cargo.toml — correct WASM target for hanabi or bevy_spark
+# Cargo.toml — correct WASM target for Hanabi on Bevy 0.19
 [dependencies]
-bevy = { version = "0.18", features = ["webgpu"] }
+bevy = { version = "0.19", features = ["webgpu"] }
 # NOT: features = ["webgl2"]
 ```
+
+`bevy_spark 0.2.0` needs the equivalent `webgpu` feature in its separate Bevy 0.18
+dependency graph; do not copy it into this Bevy 0.19 manifest.
 
 Techniques that **do** work on WebGL2:
 - Sprite-sheet flipbooks (`bevy_spritesheet_animation`)

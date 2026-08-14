@@ -1,15 +1,15 @@
 ---
 name: bevy-wasm-webgpu
-description: Use when targeting `wasm32-unknown-unknown`, picking between the `webgl2` and `webgpu` Bevy features, configuring `wasm-bindgen` glue, sizing down the bundle via `default-features = false`, or hitting "asset 404" errors caused by relative path handling in the browser. Covers Bevy 0.18 WASM build pipeline.
+description: Use when targeting `wasm32-unknown-unknown`, picking between the `webgl2` and `webgpu` Bevy features, configuring `wasm-bindgen` glue, sizing down the bundle via `default-features = false`, or hitting "asset 404" errors caused by relative path handling in the browser. Covers Bevy 0.19 WASM build pipeline.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: platform
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — WASM + WebGPU
+# Bevy 0.19 — WASM + WebGPU
 
 ## When to use this skill
 
@@ -28,16 +28,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18", default-features = false, features = [
-    # Bring just the renderer + window plumbing.
-    "3d_api",
-    "bevy_winit",
-    # Pick one or both backends. WebGL2 has best browser coverage today;
-    # WebGPU is faster and supports compute shaders but is still gated on
-    # current Chrome / Firefox / Safari versions.
-    "webgl2",
-    # "webgpu",
-    # Input — input is NOT in default-features = false anymore in 0.18.
+bevy = { version = "0.19", default-features = false, features = [
+    "3d",       # includes window plumbing and WebGL2
+    # "webgpu", # add WebGPU alongside WebGL2 when needed
+    # Input — opt in when default features are disabled.
     "mouse",
     "keyboard",
     "touch",
@@ -75,21 +69,30 @@ python3 -m http.server -d public/ 8080
 ```rust
 // At runtime, force a backend by setting `WgpuSettings.backends` before
 // `DefaultPlugins`. By default Bevy picks the best available.
-use bevy::prelude::*;
-use bevy::render::settings::{Backends, WgpuSettings};
-use bevy::render::RenderPlugin;
+use bevy::{
+    prelude::*,
+    render::{
+        RenderPlugin,
+        settings::{
+            Backends,
+            WgpuSettings,
+        },
+    },
+};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(RenderPlugin {
-            render_creation: WgpuSettings {
-                backends: Some(Backends::GL),     // WebGL2
-                // backends: Some(Backends::BROWSER_WEBGPU), // WebGPU
+        .add_plugins(
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: WgpuSettings {
+                    backends: Some(Backends::GL), // WebGL2
+                    // backends: Some(Backends::BROWSER_WEBGPU), // WebGPU
+                    ..default()
+                }
+                .into(),
                 ..default()
-            }
-            .into(),
-            ..default()
-        }))
+            }),
+        )
         .run();
 }
 ```
@@ -119,12 +122,12 @@ fn main() {
 - **Assets are served, not bundled.** `assets/` must sit next to your HTML at the served URL root. There is no built-in embed-in-WASM mode without a custom asset source.
 - **`wasm-pack` vs `wasm-bindgen` CLI.** `wasm-pack` adds an npm-style wrapper. For raw `<script type="module">` delivery, `wasm-bindgen --target web` is leaner.
 - **Coop/Coep headers** are required for `SharedArrayBuffer`, which Bevy's threadpool needs for `multi_threaded`. Without them you'll be single-threaded in the browser. Configure your server: `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp`.
-- **No `std::time::Instant` in WASM.** Bevy's `Time` works, but if you use raw `std::time::Instant` in a system it panics. Use `bevy::time::Instant` or wrap behind `#[cfg(target_arch = "wasm32")]`.
+- **No `std::time::Instant` in WASM.** Bevy's `Time` works, but raw `std::time::Instant` can panic. Add `web-time` as a direct dependency and use `web_time::Instant` for cross-platform wall-clock timing.
 - **`println!` lands in the JS console** as a generic log line. Use the `tracing` machinery (`info!`/`warn!`) for structured browser-devtools output.
 
 ## Source-confirmed scope
 
-This skill covers the parts of the WASM workflow that are uncontroversial and stable in 0.18. The Bevy 0.18 release notes did not call out WASM-specific renderer changes; the migration story is mostly the same Cargo-features rename as for native (`animation` → `gltf_animation`, etc. — see `bevy-cargo-features`).
+This skill covers the stable Bevy 0.19 WASM workflow. Feature implications are intentionally explicit; see `bevy-cargo-features` before trimming a browser build.
 
 ## See also
 

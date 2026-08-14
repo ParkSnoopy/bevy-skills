@@ -1,15 +1,15 @@
 ---
 name: bevy-voxel-data
-description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.18 voxel-data patterns — no game-specific data baked in.
+description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.19 voxel-data patterns — no game-specific data baked in.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: voxel
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Voxel data (RON, palette, KTX2 atlas)
+# Bevy 0.19 — Voxel data (RON, palette, KTX2 atlas)
 
 ## When to use this skill
 
@@ -42,21 +42,62 @@ metadata:
 **2. Core Rust types** — `BlockCatalog` is a Bevy `Asset`; `Palette` is a `Resource`:
 
 ```rust
+use std::collections::HashMap;
+
+use bevy::{
+    asset::Asset,
+    prelude::Resource,
+    reflect::TypePath,
+};
+use serde::Deserialize;
+
 #[derive(Debug, Deserialize, Asset, TypePath)]
-pub struct BlockCatalog { pub blocks: Vec<BlockDef> }
+pub struct BlockCatalog {
+    pub blocks: Vec<BlockDef>,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct BlockFaces {
+    #[serde(default)]
+    pub top: Option<String>,
+    #[serde(default)]
+    pub bottom: Option<String>,
+    #[serde(default)]
+    pub side: Option<String>,
+    #[serde(default)]
+    pub all: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct BlockDef {
+    pub name: String,
+    pub visibility: Visibility,
+    #[serde(default)]
+    pub faces: Option<BlockFaces>,
+    #[serde(default)]
+    pub flags: Vec<String>,
+}
 
 #[derive(Resource, Default)]
 pub struct Palette {
-    pub by_id:   Vec<PaletteEntry>,   // index == BlockId
+    pub by_id: Vec<PaletteEntry>, // index == BlockId
     pub by_name: HashMap<String, u16>,
 }
 
 #[derive(Default, Clone)]
 pub struct PaletteEntry {
-    pub name:       String,
+    pub name: String,
     pub visibility: Visibility,
     /// Atlas tile per face: [−X, −Y, −Z, +X, +Y, +Z] (block-mesh order).
     pub face_tiles: [u16; 6],
+}
+
+#[derive(Debug, Deserialize, Clone, Copy, Default)]
+pub enum Visibility {
+    #[default]
+    Empty,
+    Translucent,
+    Opaque,
 }
 ```
 
@@ -82,7 +123,7 @@ per-vertex UVs as `tile_x = tile_index % atlas_cols` during the meshing pass.
 ## Gotchas
 
 - **KTX2 is opt-in.** Bevy supports KTX2 via the `ktx2` Cargo feature (on by
-  default in the `3d` bundle). For trimmed WASM builds add `ktx2` and `zstd`
+  default in the `3d` bundle). For trimmed WASM builds add `ktx2` and `zstd_rust`
   explicitly. Use BC7 (desktop) or ETC2/ASTC (mobile) — see
   [references/ktx2-atlas.md](references/ktx2-atlas.md).
 - **Palette ordering is the `BlockId` space.** Reordering the catalog after a

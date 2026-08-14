@@ -15,7 +15,7 @@ use es_fluent_manager_bevy::{LocaleChangeEvent, LocaleChangedEvent};
 
 // Writing a request:
 fn request_locale_switch(mut writer: MessageWriter<LocaleChangeEvent>) {
-    writer.write(LocaleChangeEvent(langid!("fr")));
+    writer.write(LocaleChangeEvent(langid!("ko")));
 }
 
 // Reading the confirmation:
@@ -73,7 +73,7 @@ pub fn switch_locale_on_keypress(
 ) {
     if keys.just_pressed(KeyCode::KeyL) {
         let next = if requested.0.to_string() == "en" {
-            langid!("fr")
+            langid!("ko")
         } else {
             langid!("en")
         };
@@ -102,12 +102,11 @@ The plugin inserts `RequestedLanguageId` with this value before any systems run.
 
 ## Pitfalls
 
-### `BevyI18n` system param not exported in crates.io release
+### Imperative localization uses `BevyI18n`
 
-`BevyI18n` system param (imperative localization) exists in the GitHub source
-but is **not exported in crates.io `0.18.12`**. If you need imperative lookup
-in a system, query `I18nBundle` and `I18nResource` directly, or wait for a
-later release.
+`BevyI18n` is exported by `es-fluent-manager-bevy 0.19.2`. Request it as a
+system parameter and call `localize_message(&message)` for imperative lookup;
+do not query the plugin's internal bundle resources directly.
 
 ---
 

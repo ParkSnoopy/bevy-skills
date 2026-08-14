@@ -1,15 +1,15 @@
 ---
 name: bevy-pbr-materials
-description: Use when spawning a mesh with `StandardMaterial`, writing a custom `Material` with `AsBindGroup` and a required `label()` (new in 0.18), wiring `MaterialPlugin<M>` whose `prepass_enabled`/`shadows_enabled` config moved to trait methods, or chasing visual shifts caused by the 0.18 PBR shading fix. Covers Bevy 0.18 PBR materials.
+description: Use when spawning a mesh with `StandardMaterial`, writing a custom `Material` with `AsBindGroup` and a required `label()` (new in 0.18), wiring `MaterialPlugin<M>` whose `prepass_enabled`/`shadows_enabled` config moved to trait methods, or chasing visual shifts caused by the 0.18 PBR shading fix. Covers Bevy 0.19 PBR materials.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — PBR Materials
+# Bevy 0.19 — PBR Materials
 
 ## When to use this skill
 

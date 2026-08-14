@@ -1,15 +1,15 @@
 ---
 name: bevy-cameras
-description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.18 camera spawning, render targets, and built-in controllers.
+description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.19 camera spawning, render targets, and built-in controllers.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Cameras
+# Bevy 0.19 — Cameras
 
 ## When to use this skill
 
@@ -24,14 +24,19 @@ metadata:
 `FreeCamera`/`PanCamera` are gated behind Cargo features. In `Cargo.toml`:
 
 ```toml
-bevy = { version = "0.18", features = ["free_camera", "pan_camera"] }
+bevy = { version = "0.19", features = ["free_camera", "pan_camera"] }
 ```
 
 ```rust
-use bevy::asset::RenderAssetUsages;
-use bevy::camera::RenderTarget;
-use bevy::camera_controller::free_camera::{FreeCamera, FreeCameraPlugin};
-use bevy::prelude::*;
+use bevy::{
+    asset::RenderAssetUsages,
+    camera::RenderTarget,
+    camera_controller::free_camera::{
+        FreeCamera,
+        FreeCameraPlugin,
+    },
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -62,17 +67,19 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         bevy::render::render_resource::TextureFormat::Bgra8UnormSrgb,
         RenderAssetUsages::default(),
     );
-    image.texture_descriptor.usage =
-        bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
-            | bevy::render::render_resource::TextureUsages::COPY_DST
-            | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
+    image.texture_descriptor.usage = bevy::render::render_resource::TextureUsages::TEXTURE_BINDING
+        | bevy::render::render_resource::TextureUsages::COPY_DST
+        | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
     let image_handle = images.add(image);
 
     // 3. A second camera that draws into the texture.
     //    RenderTarget is now a *separate* component, not Camera.target.
     commands.spawn((
         Camera3d::default(),
-        Camera { order: -1, ..default() }, // -1 = render before the main camera
+        Camera {
+            order: -1,
+            ..default()
+        }, // -1 = render before the main camera
         RenderTarget::Image(image_handle.into()),
         Transform::from_xyz(10.0, 5.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
@@ -82,8 +89,10 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
 ## Choosing a projection
 
 ```rust
-use bevy::prelude::*;
-use bevy::camera::Projection;
+use bevy::{
+    camera::Projection,
+    prelude::*,
+};
 
 # fn _proj(mut commands: Commands) {
 // Default perspective (90° FOV is the Bevy default).
@@ -103,8 +112,10 @@ commands.spawn((
 ## Ambient light: world default vs per-camera
 
 ```rust
-use bevy::prelude::*;
-use bevy::light::GlobalAmbientLight;
+use bevy::{
+    light::GlobalAmbientLight,
+    prelude::*,
+};
 
 # fn _amb(app: &mut App, mut commands: Commands) {
 // World default — applies everywhere unless a camera overrides.
@@ -114,7 +125,13 @@ app.insert_resource(GlobalAmbientLight {
 });
 
 // Per-camera override (new in 0.18 — `AmbientLight` is now a Component).
-commands.spawn((Camera3d::default(), AmbientLight { brightness: 1000.0, ..default() }));
+commands.spawn((
+    Camera3d::default(),
+    AmbientLight {
+        brightness: 1000.0,
+        ..default()
+    },
+));
 # }
 ```
 

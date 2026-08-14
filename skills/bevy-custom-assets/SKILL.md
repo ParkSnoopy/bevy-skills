@@ -1,15 +1,15 @@
 ---
 name: bevy-custom-assets
-description: Use when implementing `AssetLoader` for a custom file format, depending on other assets via `LoadContext::loader().with_settings(..).load(..)`, hitting the 0.18 requirement to `#[derive(TypePath)]` on the loader, or using `reader.read_to_end(..)` / `seekable()` async access. Covers Bevy 0.18 custom asset loaders.
+description: Use when implementing `AssetLoader` for a custom file format, depending on other assets via `LoadContext::load_builder().with_settings(..).load(..)`, hitting the 0.18 requirement to `#[derive(TypePath)]` on the loader, or using `reader.read_to_end(..)` / `seekable()` async access. Covers Bevy 0.19 custom asset loaders.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: asset
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Custom asset loaders
+# Bevy 0.19 — Custom asset loaders
 
 ## When to use this skill
 
@@ -21,10 +21,17 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::asset::io::Reader;
-use bevy::asset::{Asset, AssetApp, AssetLoader, LoadContext};
-use bevy::prelude::*;
-use bevy::reflect::TypePath;
+use bevy::{
+    asset::{
+        Asset,
+        AssetApp,
+        AssetLoader,
+        LoadContext,
+        io::Reader,
+    },
+    prelude::*,
+    reflect::TypePath,
+};
 use serde::Deserialize;
 use thiserror::Error;
 

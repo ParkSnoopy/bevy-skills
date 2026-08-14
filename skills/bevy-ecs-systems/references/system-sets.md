@@ -1,4 +1,4 @@
-# Bevy 0.18 — SystemSet deep dive
+# Bevy 0.19 — SystemSet deep dive
 
 ## Derive requirements
 

@@ -1,4 +1,4 @@
-# Bevy 0.18 UI — Accessibility (`InputFocus`)
+# Bevy 0.19 UI — Accessibility (`InputFocus`)
 
 ## Quick reference
 
@@ -6,8 +6,8 @@
 |---|---|
 | `InputFocus` | Resource tracking which entity currently has logical focus. |
 | `bevy::input_focus::InputFocus` | Full import path. |
-| `app.init_resource::<InputFocus>()` | Required — not inserted by `DefaultPlugins`. |
-| `input_focus.set(entity)` | Give focus to an entity (e.g. on `Pressed` / `Hovered`). |
+| `InputFocusPlugin` | Included by `DefaultPlugins`; initializes focus state. |
+| `input_focus.set(entity, cause)` | Give focus and record why it changed. |
 | `input_focus.clear()` | Clear focus (e.g. on `Interaction::None`). |
 | `input_focus.get()` | Returns `Option<Entity>` — the currently focused entity. |
 
@@ -15,7 +15,7 @@
 
 Bevy integrates with platform accessibility trees (AT — screen readers, switch
 access, magnification software) via `bevy_a11y`. The `InputFocus` resource is the
-bridge: when you call `input_focus.set(entity)`, Bevy notifies the AT that focus
+bridge: when you call `input_focus.set(entity, cause)`, Bevy notifies the AT that focus
 has moved to that entity. Without this, keyboard-only or screen-reader users
 receive no feedback when a button is hovered or pressed.
 
@@ -32,7 +32,6 @@ use bevy::{input_focus::InputFocus, prelude::*};
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .init_resource::<InputFocus>() // must be explicit
         .add_systems(Startup, setup)
         .add_systems(Update, button_system)
         .run();
@@ -42,7 +41,13 @@ fn main() {
 ### Setting and clearing focus in an interaction system
 
 ```rust
-use bevy::{input_focus::InputFocus, prelude::*};
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
@@ -50,8 +55,12 @@ fn button_system(
 ) {
     for (entity, interaction, mut button) in &mut query {
         match *interaction {
-            Interaction::Pressed | Interaction::Hovered => {
-                input_focus.set(entity);
+            Interaction::Pressed => {
+                input_focus.set(entity, FocusCause::Pressed);
+                button.set_changed(); // notify a11y system
+            }
+            Interaction::Hovered => {
+                input_focus.set(entity, FocusCause::Navigated);
                 button.set_changed(); // notify a11y system
             }
             Interaction::None => {
@@ -81,9 +90,8 @@ fn keyboard_dispatch(
 
 ## Pitfalls
 
-- **`init_resource::<InputFocus>()` is NOT automatic.** `DefaultPlugins` does not
-  insert `InputFocus`. If you query `ResMut<InputFocus>` without initializing it,
-  the app will panic at schedule-build with a missing resource error.
+- **`DefaultPlugins` initializes `InputFocus`.** Explicit initialization is only
+  needed when a custom plugin set omits `InputFocusPlugin`.
 
 - **`input_focus` path changed in 0.18.** The correct import is
   `bevy::input_focus::InputFocus`. It is *not* re-exported from `bevy::prelude`

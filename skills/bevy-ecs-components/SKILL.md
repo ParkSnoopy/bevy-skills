@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-components
-description: Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, writing observers with `On<E>` (NOT `Trigger<E>` — renamed in 0.17), choosing between Table and SparseSet storage, or registering `on_add`/`on_remove` hooks in Bevy 0.18.
+description: Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, writing observers with `On<E>` (NOT `Trigger<E>` — renamed in 0.17), choosing between Table and SparseSet storage, or registering `on_add`/`on_remove` hooks in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Components
+# Bevy 0.19 — ECS Components
 
 ## When to use this skill
 
@@ -66,7 +66,10 @@ fn spawn_player(mut commands: Commands) {
 
 fn deal_damage(mut commands: Commands, query: Query<Entity, With<Player>>) {
     for entity in &query {
-        commands.trigger(Damage { entity, amount: 10.0 });
+        commands.trigger(Damage {
+            entity,
+            amount: 10.0,
+        });
     }
 }
 
@@ -79,7 +82,7 @@ fn on_damage(damage: On<Damage>, mut query: Query<&mut Health>) {
 }
 ```
 
-## Gotchas (0.18)
+## Gotchas (0.19)
 
 - **`Trigger<E>` is gone.** Observer params are `On<E>` in 0.17+. Methods: `event()`, `event_mut()`, `observer()`, `original_event_target()`, `propagate(bool)`.
 - **`EntityEvent::set_target`** requires `use bevy::ecs::entity::SetEntityEventTarget;` — not in the prelude.
