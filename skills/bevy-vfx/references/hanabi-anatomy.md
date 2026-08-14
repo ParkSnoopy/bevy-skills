@@ -34,7 +34,7 @@ commands.spawn(...)          // ParticleEffect::new(handle) + Transform + Visibi
 
 ## Why `ParticleEffect` is a bare component
 
-In 0.18 `ParticleEffectBundle` was removed. `ParticleEffect` itself carries
+Since 0.18, `ParticleEffectBundle` is removed. `ParticleEffect` itself carries
 `#[require(CompiledParticleEffect, Transform, Visibility, VisibilityClass, SyncToRenderWorld)]`,
 so Bevy's required-components system inserts those six components automatically. You only
 need to provide the ones where you want non-default values:
@@ -70,7 +70,7 @@ let spawner = SpawnerSettings::once(100.0_f32.into());
 ```
 
 All three take `CpuValue<f32>`, created by calling `.into()` on a `f32`. `CpuValue` can
-also express random ranges — see [docs.rs/bevy_hanabi/0.18.0](https://docs.rs/bevy_hanabi/0.18.0/bevy_hanabi/enum.CpuValue.html).
+also express random ranges — see [docs.rs/bevy_hanabi/0.19.0](https://docs.rs/bevy_hanabi/0.19.0/bevy_hanabi/enum.CpuValue.html).
 
 ## `ExprWriter` deep-dive
 
@@ -97,7 +97,7 @@ let module = writer.finish();  // call AFTER all expressions are built
 
 Calling `writer.lit(...)` after `writer.finish()` panics. Build all expressions first.
 
-## Worked example (verified against `bevy_hanabi = "0.18.0"`)
+## Worked example (verified against `bevy_hanabi = "0.19.0"`)
 
 ```rust
 use bevy::prelude::*;

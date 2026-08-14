@@ -39,7 +39,7 @@ assets/
     ├── en/
     │   ├── ui.ftl
     │   └── menu.ftl
-    └── fr/
+    └── ko/
         ├── ui.ftl
         └── menu.ftl
 ```

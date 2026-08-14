@@ -39,12 +39,15 @@ struct Enemy;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_systems(Update, (
-            move_things,
-            on_health_changed,
-            damage_visible_enemies,
-            integrate_in_parallel,
-        ))
+        .add_systems(
+            Update,
+            (
+                move_things,
+                on_health_changed,
+                damage_visible_enemies,
+                integrate_in_parallel,
+            ),
+        )
         .run();
 }
 
@@ -67,7 +70,14 @@ fn on_health_changed(q: Query<(Entity, &Health), Changed<Health>>) {
 // Combined filters. `With`/`Without` constrain entities;
 // `Or<(...)>` alternates over filters (not components).
 fn damage_visible_enemies(
-    mut q: Query<&mut Health, (With<Enemy>, Without<Player>, Or<(Added<Enemy>, Changed<Transform>)>)>,
+    mut q: Query<
+        &mut Health,
+        (
+            With<Enemy>,
+            Without<Player>,
+            Or<(Added<Enemy>, Changed<Transform>)>,
+        ),
+    >,
 ) {
     for mut hp in &mut q {
         hp.0 -= 1.0;

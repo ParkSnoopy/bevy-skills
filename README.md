@@ -87,9 +87,9 @@ OpenCode reads `~/.claude/skills/` natively — no duplication needed if both ag
 | [`bevy-ui`](skills/bevy-ui/SKILL.md) | `Node`, `Button`, `Interaction`, `children![]`, `TextFont`, `InputFocus`, `BorderRadius`, `BackgroundColor`. |
 | [`similarity-rs`](skills/similarity-rs/SKILL.md) | Detect copy-paste and near-duplicate Rust code before committing. `--cross-file`, `--threshold`, CI recipes. |
 
-`bevy-vfx` remains pinned to Bevy 0.18 because its documented `bevy_spark 0.2.0`
-dependency does not support Bevy 0.19. The
-historical `bevy-migration-0-17-to-0-18` skill also intentionally remains on 0.18.
+`bevy-vfx` targets Bevy 0.19 for Hanabi, sprite-sheet, vector-shape, and custom-material
+guidance; its `bevy_spark 0.2.0` reference is an explicit Bevy 0.18-only exception.
+The historical `bevy-migration-0-17-to-0-18` skill also intentionally remains on 0.18.
 `bevy-porting` also remains on 0.18 until its broad community-package matrix is verified.
 
 More skills (server, networking, animation, rendering deep dives) ship in subsequent phases.

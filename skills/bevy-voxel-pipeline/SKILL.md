@@ -20,14 +20,33 @@ metadata:
 
 ## Canonical pattern
 
+```toml
+[dependencies]
+bevy = "0.19"
+block-mesh = "0.2.0"
+futures-lite = "2"
+```
+
 ```rust
-use bevy::asset::RenderAssetUsages;
-use bevy::mesh::{Indices, PrimitiveTopology};
-use bevy::prelude::*;
-use block_mesh::ndshape::{ConstShape, ConstShape3u32};
+use bevy::{
+    asset::RenderAssetUsages,
+    mesh::{
+        Indices,
+        PrimitiveTopology,
+    },
+    prelude::*,
+};
 use block_mesh::{
-    greedy_quads, GreedyQuadsBuffer, MergeVoxel, Voxel, VoxelVisibility,
+    GreedyQuadsBuffer,
+    MergeVoxel,
     RIGHT_HANDED_Y_UP_CONFIG,
+    Voxel,
+    VoxelVisibility,
+    greedy_quads,
+    ndshape::{
+        ConstShape,
+        ConstShape3u32,
+    },
 };
 
 // 18^3 — the standard "chunk plus padding" block-mesh expects.
@@ -50,7 +69,10 @@ impl Voxel for BlockId {
 
 impl MergeVoxel for BlockId {
     type MergeValue = u16;
-    fn merge_value(&self) -> Self::MergeValue { self.0 }
+
+    fn merge_value(&self) -> Self::MergeValue {
+        self.0
+    }
 }
 
 /// Build a Bevy Mesh from a padded chunk of blocks.
@@ -78,7 +100,12 @@ pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
     let mut positions = Vec::with_capacity(num_vertices);
     let mut normals = Vec::with_capacity(num_vertices);
 
-    for (group, face) in buffer.quads.groups.iter().zip(RIGHT_HANDED_Y_UP_CONFIG.faces.iter()) {
+    for (group, face) in buffer
+        .quads
+        .groups
+        .iter()
+        .zip(RIGHT_HANDED_Y_UP_CONFIG.faces.iter())
+    {
         for quad in group.iter() {
             indices.extend_from_slice(&face.quad_mesh_indices(positions.len() as u32));
             positions.extend_from_slice(&face.quad_mesh_positions(quad, 1.0));
@@ -86,9 +113,14 @@ pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
-    mesh.try_insert_attribute(Mesh::ATTRIBUTE_POSITION, positions).ok()?;
-    mesh.try_insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals).ok()?;
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
+    mesh.try_insert_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+        .ok()?;
+    mesh.try_insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .ok()?;
     mesh.insert_indices(Indices::U32(indices));
     Some(mesh)
 }
@@ -97,21 +129,30 @@ pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
 ## Threading: get it off the main thread
 
 ```rust
-use bevy::prelude::*;
-use bevy::tasks::{AsyncComputeTaskPool, Task};
+use bevy::{
+    prelude::*,
+    tasks::{
+        AsyncComputeTaskPool,
+        Task,
+    },
+};
 use futures_lite::future;
 
 #[derive(Component)]
 struct MeshTask(Task<Option<Mesh>>);
 
-# fn _kick(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+# fn _kick(mut commands: Commands) {
 let pool = AsyncComputeTaskPool::get();
 let blocks: Vec<crate::BlockId> = Vec::new(); // load from chunk store
 let task = pool.spawn(async move { crate::mesh_chunk(&blocks) });
 commands.spawn(MeshTask(task));
 # }
 
-# fn _poll(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut q: Query<(Entity, &mut MeshTask)>) {
+# fn _poll(
+#     mut commands: Commands,
+#     mut meshes: ResMut<Assets<Mesh>>,
+#     mut q: Query<(Entity, &mut MeshTask)>,
+# ) {
 for (entity, mut task) in &mut q {
     if let Some(maybe_mesh) = future::block_on(future::poll_once(&mut task.0)) {
         commands.entity(entity).remove::<MeshTask>();

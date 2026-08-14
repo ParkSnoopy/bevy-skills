@@ -52,9 +52,7 @@ The skills target multiple consumers (Claude Code, OpenCode, Cursor, Codex). Con
 
 ## The companion tester crate
 
-Compile verification lives in a sibling repo: `bevy-skills-tester` at `../bevy-skills-tester` (relative to a typical checkout). It is **intentionally not vendored** into this repo — pulling Bevy + its dependency graph would force every docs contributor to compile hundreds of crates to validate a one-line description fix. The lint script enforces frontmatter; the tester crate enforces snippets compile.
-
-If you don't have the tester crate locally, clone it from <https://github.com/chrisgliddon/bevy-skills-tester> (or create it from scratch — its `Cargo.toml` is six lines).
+Compile verification lives in the in-repository `bevy-skills-tester/` crate. The lint script enforces frontmatter; the tester crate enforces that snippets compile under their documented Bevy versions. Run its checks only when code blocks or versioned API guidance change; prose-only contributors do not need to compile Bevy.
 
 ## What `description` should look like
 

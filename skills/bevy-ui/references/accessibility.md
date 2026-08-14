@@ -41,7 +41,13 @@ fn main() {
 ### Setting and clearing focus in an interaction system
 
 ```rust
-use bevy::{input_focus::{FocusCause, InputFocus}, prelude::*};
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn button_system(
     mut input_focus: ResMut<InputFocus>,

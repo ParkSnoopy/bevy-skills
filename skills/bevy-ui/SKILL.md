@@ -27,7 +27,13 @@ metadata:
 Centered button — full-screen flex container, rounded pill button, text child.
 
 ```rust
-use bevy::{input_focus::{FocusCause, InputFocus}, prelude::*};
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn main() {
     App::new()
@@ -82,7 +88,13 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
     mut query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut BorderColor, &mut Button),
+        (
+            Entity,
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Button,
+        ),
         Changed<Interaction>,
     >,
 ) {

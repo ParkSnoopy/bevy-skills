@@ -21,10 +21,17 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::asset::io::Reader;
-use bevy::asset::{Asset, AssetApp, AssetLoader, LoadContext};
-use bevy::prelude::*;
-use bevy::reflect::TypePath;
+use bevy::{
+    asset::{
+        Asset,
+        AssetApp,
+        AssetLoader,
+        LoadContext,
+        io::Reader,
+    },
+    prelude::*,
+    reflect::TypePath,
+};
 use serde::Deserialize;
 use thiserror::Error;
 

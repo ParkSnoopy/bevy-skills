@@ -27,12 +27,12 @@ TextFont {
 
 `FontSource` can also name a font instead of holding a handle:
 
-- **By family name:** `FontSource::family("Fira Sans")`
+- **By family name:** `FontSource::Family("Fira Sans".into())`
 - **By semantic category:** `Serif`, `SansSerif`, `Cursive`, `Fantasy`, `Monospace`,
   and UI categories like `SystemUi`, `Emoji`, `Math`.
 
 Family/semantic lookup only finds *installed system fonts* when the
-`bevy/system_font_discovery` feature is enabled — without it, `FontSource::family("…")`
+`bevy/system_font_discovery` feature is enabled — without it, `FontSource::Family("…".into())`
 resolves only fonts you explicitly loaded as Bevy assets. On Linux that feature needs
 fontconfig headers: `sudo apt install libfontconfig1-dev`.
 
@@ -53,7 +53,7 @@ The 0.18 pattern of inserting a font at `TextFont::default().font` so every
 `..default()` entity inherits it **no longer behaves the same** — `TextFont::default().font`
 is a `FontSource`, not a `Handle<Font>`, and Parley/fontique now handle fallback
 automatically. Remove the bespoke fallback resource and rely on system discovery
-(plus the feature flag above) or per-`TextFont` `FontSource::family(...)`.
+(plus the feature flag above) or per-`TextFont` `FontSource::Family(name.into())`.
 
 The explicit fallback setters (`set_serif_family`, `set_sans_serif_family`,
 `set_monospace_family`) now return `Result`, and in most apps you should not need to

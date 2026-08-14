@@ -23,26 +23,38 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::ecs::system::SystemParam;
-use bevy::prelude::*;
+use bevy::{
+    ecs::system::SystemParam,
+    prelude::*,
+};
 
 #[derive(SystemSet, Hash, PartialEq, Eq, Clone, Debug)]
-enum GameLoop { Input, Simulate, Render }
+enum GameLoop {
+    Input,
+    Simulate,
+    Render,
+}
 
 #[derive(States, Default, Hash, PartialEq, Eq, Clone, Debug)]
-enum AppState { #[default] Loading, Playing }
+enum AppState {
+    #[default]
+    Loading,
+    Playing,
+}
 
 #[derive(Resource, Default)]
 struct Score(u32);
 
 #[derive(Message)]
-struct GoalScored { team: u8 }
+struct GoalScored {
+    team: u8,
+}
 
 // Composite param: pass one argument, get four.
 // 'w = world borrow; 's = system-local state borrow.
 #[derive(SystemParam)]
 struct GameCtx<'w, 's> {
-    time:  Res<'w, Time>,
+    time: Res<'w, Time>,
     score: ResMut<'w, Score>,
     goals: MessageReader<'w, 's, GoalScored>,
 }
@@ -53,7 +65,10 @@ fn main() {
         .init_resource::<Score>()
         .add_message::<GoalScored>()
         .init_state::<AppState>()
-        .configure_sets(Update, (GameLoop::Input, GameLoop::Simulate, GameLoop::Render).chain())
+        .configure_sets(
+            Update,
+            (GameLoop::Input, GameLoop::Simulate, GameLoop::Render).chain(),
+        )
         // State schedule: fires once when entering Playing.
         .add_systems(OnEnter(AppState::Playing), spawn_level)
         // State schedule: fires once when leaving Playing.
@@ -77,7 +92,9 @@ fn spawn_level(mut commands: Commands) {
 }
 
 fn despawn_level(mut commands: Commands, query: Query<Entity, With<LevelEntity>>) {
-    for e in &query { commands.entity(e).despawn(); }
+    for e in &query {
+        commands.entity(e).despawn();
+    }
 }
 
 fn read_input(mut writer: MessageWriter<GoalScored>) {
@@ -92,7 +109,9 @@ fn tally_goals(mut ctx: GameCtx) {
     }
 }
 
-fn draw_hud(score: Res<Score>) { let _ = score.0; }
+fn draw_hud(score: Res<Score>) {
+    let _ = score.0;
+}
 ```
 
 ## Run condition cheat sheet

@@ -39,7 +39,7 @@ my-game/
 │   └── locales/
 │       ├── en/
 │       │   └── ui.ftl
-│       └── fr/
+│       └── ko/
 │           └── ui.ftl
 └── src/
     ├── lib.rs     ← types + plugin builder live here
@@ -125,7 +125,7 @@ pub fn switch_locale_on_keypress(
 ) {
     if keys.just_pressed(KeyCode::KeyL) {
         let next = if requested.0.to_string() == "en" {
-            langid!("fr")
+            langid!("ko")
         } else {
             langid!("en")
         };

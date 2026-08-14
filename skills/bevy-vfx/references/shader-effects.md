@@ -14,12 +14,13 @@ CPU only updates a time uniform. Good candidates:
 - Chromatic-aberration or screen-space distortion overlays
 - Glowing / pulsing emissive cores that pair with hanabi sparks around them
 
-## Custom `Material` in Bevy 0.18
+## Custom `Material` in Bevy 0.19
 
 ```rust
 use bevy::{
     prelude::*,
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::render_resource::AsBindGroup,
+    shader::ShaderRef,
 };
 
 #[derive(Asset, AsBindGroup, TypePath, Clone)]
@@ -38,7 +39,7 @@ impl Material for FlickerMaterial {
 }
 ```
 
-> **0.18 gotcha — `AsBindGroup::label()` is now required.**
+> **Migration gotcha — `AsBindGroup::label()` is required.**
 > In 0.17 it had a blanket default implementation. In 0.18 the blanket was removed;
 > you must either derive it (the `#[derive(AsBindGroup)]` macro handles this) or
 > implement it manually. Using `#[derive(AsBindGroup)]` as shown above is the
@@ -55,7 +56,7 @@ app.add_plugins(MaterialPlugin::<FlickerMaterial>::default());
 
 ```toml
 [dependencies]
-bevy = "0.18"
+bevy = "0.19"
 ```
 
 ```rust
@@ -66,7 +67,7 @@ fn update_flicker(
     q: Query<&MeshMaterial3d<FlickerMaterial>>,
 ) {
     for handle in &q {
-        if let Some(mat) = materials.get_mut(handle) {
+        if let Some(mut mat) = materials.get_mut(handle) {
             mat.time = time.elapsed_secs();
         }
     }
@@ -134,7 +135,7 @@ overlapping transparent layers at high screen coverage will cause fragment overd
 
 ## WASM compatibility
 
-Custom `Material` + WGSL shaders work on both WebGL2 and WebGPU targets in Bevy 0.18,
+Custom `Material` + WGSL shaders work on both WebGL2 and WebGPU targets in Bevy 0.19,
 provided the WGSL stays within WGSL's core feature set:
 
 - Texture sampling, uniforms, basic arithmetic — both backends.

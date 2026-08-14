@@ -39,8 +39,15 @@ Do not replace `tag` with a floating branch or an unverified crates.io version. 
 ```rust
 use bevy::prelude::*;
 use bevy_generative::{
-    map::{Map, MapBundle, MapPlugin},
-    noise::{FunctionName, Method},
+    map::{
+        Map,
+        MapBundle,
+        MapPlugin,
+    },
+    noise::{
+        FunctionName,
+        Method,
+    },
 };
 
 fn main() {
@@ -81,7 +88,11 @@ The map plugin writes the generated `Image` to `MapBundle`'s `ImageNode`; it is 
 
 ```rust
 use bevy::prelude::*;
-use bevy_generative::terrain::{Terrain, TerrainBundle, TerrainPlugin};
+use bevy_generative::terrain::{
+    Terrain,
+    TerrainBundle,
+    TerrainPlugin,
+};
 
 fn add_terrain(app: &mut App) {
     app.add_plugins(TerrainPlugin)

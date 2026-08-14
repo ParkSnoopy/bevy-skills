@@ -16,12 +16,24 @@
 ### Standard interaction system
 
 ```rust
-use bevy::{input_focus::{FocusCause, InputFocus}, prelude::*};
+use bevy::{
+    input_focus::{
+        FocusCause,
+        InputFocus,
+    },
+    prelude::*,
+};
 
 fn button_system(
     mut input_focus: ResMut<InputFocus>,
     mut query: Query<
-        (Entity, &Interaction, &mut BackgroundColor, &mut BorderColor, &mut Button),
+        (
+            Entity,
+            &Interaction,
+            &mut BackgroundColor,
+            &mut BorderColor,
+            &mut Button,
+        ),
         Changed<Interaction>,
     >,
 ) {

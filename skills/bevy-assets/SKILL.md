@@ -22,7 +22,10 @@ metadata:
 ## Canonical pattern
 
 ```rust
-use bevy::{prelude::*, world_serialization::WorldAsset};
+use bevy::{
+    prelude::*,
+    world_serialization::WorldAsset,
+};
 
 fn main() {
     App::new()
@@ -49,10 +52,7 @@ fn load_handles(asset_server: Res<AssetServer>, mut handles: ResMut<MyHandles>) 
     handles.bricks = asset_server.load("textures/bricks.png");
 }
 
-fn react_to_loads(
-    mut ev: MessageReader<AssetEvent<Image>>,
-    images: Res<Assets<Image>>,
-) {
+fn react_to_loads(mut ev: MessageReader<AssetEvent<Image>>, images: Res<Assets<Image>>) {
     for event in ev.read() {
         if let AssetEvent::LoadedWithDependencies { id } = event {
             if let Some(img) = images.get(*id) {
@@ -79,7 +79,10 @@ let _ = path_with_label;
 ## Asset readiness check
 
 ```rust
-use bevy::{prelude::*, world_serialization::WorldAsset};
+use bevy::{
+    prelude::*,
+    world_serialization::WorldAsset,
+};
 
 # fn _check(
 asset_server: Res<AssetServer>,
@@ -87,7 +90,7 @@ handles: Res<MyHandles>,
 # ) {
 use bevy::asset::LoadState;
 
-if asset_server.load_state(&handles.hero) == LoadState::Loaded {
+if matches!(asset_server.load_state(&handles.hero), LoadState::Loaded) {
     // Safe to query Assets<WorldAsset> and use it.
 }
 # }

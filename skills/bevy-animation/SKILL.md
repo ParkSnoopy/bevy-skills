@@ -26,18 +26,25 @@ metadata:
 This pattern targets `bevy = "0.19"`.
 
 ```rust
+use core::time::Duration;
+
 use bevy::{
     animation::{
+        AnimationEvent,
+        AnimationTargetId,
         animated_field,
-        animation_curves::{AnimatableCurve, AnimatableKeyframeCurve},
-        AnimationEvent, AnimationTargetId,
+        animation_curves::{
+            AnimatableCurve,
+            AnimatableKeyframeCurve,
+        },
     },
     prelude::*,
 };
-use core::time::Duration;
 
 #[derive(AnimationEvent, Clone)]
-struct FootstepEvent { foot: u8 }
+struct FootstepEvent {
+    foot: u8,
+}
 
 fn setup(
     mut commands: Commands,
@@ -46,16 +53,16 @@ fn setup(
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
     // 1. Load a glTF clip
-    let walk: Handle<AnimationClip> =
-        asset_server.load("models/character.glb#Animation0");
+    let walk: Handle<AnimationClip> = asset_server.load("models/character.glb#Animation0");
 
     // 2. Build a tiny procedural clip with a sample curve + an event
     let bone = AnimationTargetId::from_name(&Name::new("Hips"));
     let tween = AnimatableKeyframeCurve::new([
         (0.0_f32, Vec3::ZERO),
-        (0.5,     Vec3::new(0.0, 1.0, 0.0)),
-        (1.0,     Vec3::ZERO),
-    ]).expect("strictly-increasing times");
+        (0.5, Vec3::new(0.0, 1.0, 0.0)),
+        (1.0, Vec3::ZERO),
+    ])
+    .expect("strictly-increasing times");
     let curve = AnimatableCurve::new(animated_field!(Transform::translation), tween);
     let mut proc = AnimationClip::default();
     proc.add_curve_to_target(bone, curve);
@@ -80,22 +87,29 @@ fn setup(
 }
 
 fn start(mut q: Query<(&mut AnimationTransitions, &mut AnimationPlayer), Added<AnimationPlayer>>) {
-    use bevy::animation::{graph::AnimationNodeIndex, RepeatAnimation};
+    use bevy::animation::{
+        RepeatAnimation,
+        graph::AnimationNodeIndex,
+    };
     for (mut tx, mut player) in &mut q {
-        tx.play(&mut player, AnimationNodeIndex::new(1), Duration::from_millis(250))
-            .set_repeat(RepeatAnimation::Forever);
+        tx.play(
+            &mut player,
+            AnimationNodeIndex::new(1),
+            Duration::from_millis(250),
+        )
+        .set_repeat(RepeatAnimation::Forever);
     }
 }
 
 fn on_footstep(trigger: On<FootstepEvent>) {
-    let foot = trigger.foot;                        // On<E> derefs to &E
-    let _entity = trigger.trigger().target;          // AnimationEventTrigger::target
+    let foot = trigger.foot; // On<E> derefs to &E
+    let _entity = trigger.trigger().target; // AnimationEventTrigger::target
     let _ = foot;
 }
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)                 // gltf_animation is a default feature
+        .add_plugins(DefaultPlugins) // gltf_animation is a default feature
         .add_systems(Startup, setup)
         .add_systems(Update, start)
         .add_observer(on_footstep)

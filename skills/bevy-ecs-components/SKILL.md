@@ -66,7 +66,10 @@ fn spawn_player(mut commands: Commands) {
 
 fn deal_damage(mut commands: Commands, query: Query<Entity, With<Player>>) {
     for entity in &query {
-        commands.trigger(Damage { entity, amount: 10.0 });
+        commands.trigger(Damage {
+            entity,
+            amount: 10.0,
+        });
     }
 }
 

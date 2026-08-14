@@ -50,7 +50,11 @@ es_fluent_manager_bevy::define_i18n_module!();
 use bevy::prelude::*;
 use es_fluent::EsFluent;
 use es_fluent_manager_bevy::{
-    BevyFluentText, FluentText, I18nPlugin, LocaleChangeEvent, RequestedLanguageId,
+    BevyFluentText,
+    FluentText,
+    I18nPlugin,
+    LocaleChangeEvent,
+    RequestedLanguageId,
 };
 use unic_langid::langid;
 
@@ -58,7 +62,11 @@ pub mod i18n;
 
 #[derive(BevyFluentText, Clone, EsFluent)]
 #[fluent(namespace = "ui")]
-pub enum UiMessage { StartGame, Settings, QuitGame }
+pub enum UiMessage {
+    StartGame,
+    Settings,
+    QuitGame,
+}
 
 pub fn build_i18n_plugin() -> I18nPlugin {
     I18nPlugin::with_language(langid!("en"))
@@ -76,7 +84,11 @@ pub fn switch_locale_on_keypress(
     mut locale_events: MessageWriter<LocaleChangeEvent>,
 ) {
     if keys.just_pressed(KeyCode::KeyL) {
-        let next = if requested.0.to_string() == "en" { langid!("fr") } else { langid!("en") };
+        let next = if requested.0.to_string() == "en" {
+            langid!("ko")
+        } else {
+            langid!("en")
+        };
         locale_events.write(LocaleChangeEvent(next));
     }
 }
@@ -86,7 +98,11 @@ pub fn switch_locale_on_keypress(
 
 ```rust
 use bevy::prelude::*;
-use my_game::{build_i18n_plugin, setup_ui, switch_locale_on_keypress};
+use my_game::{
+    build_i18n_plugin,
+    setup_ui,
+    switch_locale_on_keypress,
+};
 
 fn main() {
     App::new()

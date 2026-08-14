@@ -69,21 +69,30 @@ python3 -m http.server -d public/ 8080
 ```rust
 // At runtime, force a backend by setting `WgpuSettings.backends` before
 // `DefaultPlugins`. By default Bevy picks the best available.
-use bevy::prelude::*;
-use bevy::render::settings::{Backends, WgpuSettings};
-use bevy::render::RenderPlugin;
+use bevy::{
+    prelude::*,
+    render::{
+        RenderPlugin,
+        settings::{
+            Backends,
+            WgpuSettings,
+        },
+    },
+};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(RenderPlugin {
-            render_creation: WgpuSettings {
-                backends: Some(Backends::GL),     // WebGL2
-                // backends: Some(Backends::BROWSER_WEBGPU), // WebGPU
+        .add_plugins(
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: WgpuSettings {
+                    backends: Some(Backends::GL), // WebGL2
+                    // backends: Some(Backends::BROWSER_WEBGPU), // WebGPU
+                    ..default()
+                }
+                .into(),
                 ..default()
-            }
-            .into(),
-            ..default()
-        }))
+            }),
+        )
         .run();
 }
 ```

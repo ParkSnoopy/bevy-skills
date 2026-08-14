@@ -15,7 +15,7 @@ use es_fluent_manager_bevy::{LocaleChangeEvent, LocaleChangedEvent};
 
 // Writing a request:
 fn request_locale_switch(mut writer: MessageWriter<LocaleChangeEvent>) {
-    writer.write(LocaleChangeEvent(langid!("fr")));
+    writer.write(LocaleChangeEvent(langid!("ko")));
 }
 
 // Reading the confirmation:
@@ -73,7 +73,7 @@ pub fn switch_locale_on_keypress(
 ) {
     if keys.just_pressed(KeyCode::KeyL) {
         let next = if requested.0.to_string() == "en" {
-            langid!("fr")
+            langid!("ko")
         } else {
             langid!("en")
         };

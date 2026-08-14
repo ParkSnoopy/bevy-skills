@@ -35,12 +35,19 @@ bevy_capture = { version = "0.6.0", features = ["mp4_openh264"] }
 ```
 
 ```rust
-use bevy::{camera::RenderTarget, prelude::*};
+use std::fs;
+
+use bevy::{
+    camera::RenderTarget,
+    prelude::*,
+};
 use bevy_capture::{
-    Capture, CaptureBundle, CapturePlugin, RenderTargetHeadless,
+    Capture,
+    CaptureBundle,
+    CapturePlugin,
+    RenderTargetHeadless,
     encoder::mp4_openh264::Mp4Openh264Encoder,
 };
-use std::fs;
 
 fn main() {
     App::new()
@@ -69,7 +76,9 @@ fn drive_capture(
     mut stopped: Local<bool>,
     mut frame: Local<u32>,
 ) {
-    let Ok(mut capture) = q.single_mut() else { return };
+    let Ok(mut capture) = q.single_mut() else {
+        return;
+    };
 
     if !*started {
         *started = true;
@@ -77,9 +86,8 @@ fn drive_capture(
 
         // Mp4Openh264Encoder — in-process H.264, no shell-out or system ffmpeg.
         capture.start(
-            Mp4Openh264Encoder::new(
-                fs::File::create("captures/out.mp4").unwrap(), 1920, 1080,
-            ).expect("openh264 init"),
+            Mp4Openh264Encoder::new(fs::File::create("captures/out.mp4").unwrap(), 1920, 1080)
+                .expect("openh264 init"),
         );
     }
 

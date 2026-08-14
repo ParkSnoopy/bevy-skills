@@ -71,7 +71,7 @@ fn text_with_system_font() -> impl Bundle {
     (
         Text::new("Hello"),
         TextFont {
-            font: FontSource::family("Fira Sans"),
+            font: FontSource::Family("Fira Sans".into()),
             font_size: FontSize::Px(24.0),
             ..default()
         },

@@ -11,7 +11,7 @@ metadata:
 
 # Bevy 0.19 — Router
 
-**Read this first when working on a Bevy project.** The collection defaults to Bevy 0.19 (released 2026-06-18). Check each skill's `metadata.bevy_version`: `bevy-vfx` remains on 0.18 because `bevy_spark 0.2.0` does not support 0.19; `bevy-porting` remains on 0.18 until its broad community-package matrix is verified; and `bevy-migration-0-17-to-0-18` intentionally documents the older target.
+**Read this first when working on a Bevy project.** The collection defaults to Bevy 0.19 (released 2026-06-18). Check each skill's `metadata.bevy_version`: `bevy-vfx` targets 0.19 while marking `bevy_spark 0.2.0` as a Bevy 0.18-only exception; `bevy-porting` remains on 0.18 until its broad community-package matrix is verified; and `bevy-migration-0-17-to-0-18` intentionally documents the older target.
 
 ## Smallest valid app
 
@@ -53,7 +53,7 @@ fn setup(mut commands: Commands) {
 | Camera capture with `bevy_capture 0.6.0`, MP4, GIF, or PNG encoders | `bevy-capture` |
 | `Node`, `Button`, `Interaction`, `children![]`, `TextFont`, `InputFocus`, `BorderRadius`, `BackgroundColor` | `bevy-ui` |
 | Procedural 2D maps, terrain, or cube-sphere planets via `MapPlugin` / `TerrainPlugin` / `PlanetPlugin` | `bevy-generative` (git tag `b0.19.0`) |
-| Hanabi particles, Gaussian splats, vector shapes, and custom VFX shaders | `bevy-vfx` (**Bevy 0.18 only** until every documented package supports 0.19) |
+| Hanabi particles, Gaussian splats, vector shapes, and custom VFX shaders | `bevy-vfx` (Bevy 0.19; `bevy_spark 0.2.0` is an explicit 0.18-only exception) |
 | Detecting copy-paste / near-duplicate Rust code before committing (`similarity-rs --cross-file`) | `similarity-rs` |
 
 ## Cardinal rules (every Bevy 0.19 task)
