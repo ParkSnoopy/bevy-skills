@@ -1,4 +1,4 @@
-# Bevy 0.18 — System ordering deep dive
+# Bevy 0.19 — System ordering deep dive
 
 ## The problem: `SimpleExecutor` is gone
 

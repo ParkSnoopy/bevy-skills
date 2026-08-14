@@ -65,4 +65,3 @@ Need ffmpeg, memory-efficient, long?   → Mp4FfmpegCliPipeEncoder
 ## See also
 
 - [`SKILL.md`](../SKILL.md) — dispatcher with canonical pattern.
-- [`bevy-0-18-patch.md`](bevy-0-18-patch.md) — patches to build 0.4.1 against Bevy 0.18.

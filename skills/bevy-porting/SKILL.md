@@ -90,7 +90,9 @@ These show up regardless of source engine:
 
 ## See also
 
-- [`bevy`](../bevy/SKILL.md) — router; pins Bevy 0.18 and indexes every sibling skill.
+Sibling skills default to 0.19; do not copy their version-specific snippets into an 0.18 port.
+
+- [`bevy`](../bevy/SKILL.md) — router; identifies this skill as a Bevy 0.18 compatibility exception.
 - [`bevy-animation`](../bevy-animation/SKILL.md) — `AnimationGraph`, `AnimationTransitions`, `#[derive(AnimationEvent)]`. Cross-linked from `unity-animation.md`.
 - [`bevy-ui`](../bevy-ui/SKILL.md) — `Node` + Taffy/flex model. Cross-linked from `unity-ui.md`.
 - [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md) — replaces Unity Build Settings / PlayerSettings.

@@ -1,4 +1,4 @@
-# Bevy 0.18 — Lighting Reference
+# Bevy 0.19 — Lighting Reference
 
 Deep dive on light components and resources. See also
 [mesh-primitives](mesh-primitives.md) and [custom-material](custom-material.md).
@@ -204,8 +204,7 @@ app.insert_resource(PointLightShadowMap { size: 2048 }); // default 1024
 ### Spot light shadow map resolution
 
 ```rust
-// SpotLight does NOT use PointLightShadowMap. It shares the directional-light
-// shadow map (verified at bevy_light-0.18.1/src/spot_light.rs:21).
+// SpotLight does NOT use PointLightShadowMap. It shares the directional-light shadow map.
 app.insert_resource(DirectionalLightShadowMap { size: 4096 }); // default 2048
 ```
 

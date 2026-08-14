@@ -19,7 +19,7 @@ metadata:
 - Compiler errors after a `bevy = "0.18"` → `bevy = "0.19"` bump.
 - LLM emits 0.18-era text/font/scene API names from training data.
 - A `#[derive(Resource)]` type suddenly behaves like a component.
-- A third-party crate (`bevy_capture`, etc.) hasn't shipped 0.19 yet.
+- A third-party crate has not shipped a Bevy 0.19-compatible release yet.
 
 ## The renames you'll hit first
 
@@ -101,10 +101,11 @@ lost their `Core` prefix (`CoreScrollbarThumb` → `ScrollbarThumb`,
 
 ## Third-party crates lag the release
 
-`bevy_capture` (the crate behind `bevy-capture`) tracks Bevy and may not have a 0.19
-release yet — **verify a 0.19-compatible version exists before bumping.** When it does,
-`EasyScreenRecordPlugin` gained a required `output_dir: Option<PathBuf>` field
-(only breaks manual struct construction; `..default()` is fine).
+Check every Bevy-coupled package before migrating it. `bevy_capture 0.6.0`,
+`es-fluent-manager-bevy 0.19.2`, `bevy_hanabi 0.19.0`, and
+`bevy_spritesheet_animation 7.0.1` and `bevy_vector_shapes 0.13.1` support Bevy
+0.19. `bevy_spark 0.2.0` still requires Bevy 0.18, so the composite `bevy-vfx`
+skill remains pinned to 0.18 rather than recommending a split Bevy dependency graph.
 
 ## Gotchas
 

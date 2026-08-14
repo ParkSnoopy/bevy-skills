@@ -1,15 +1,15 @@
 ---
 name: bevy-cameras
-description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.18 camera spawning, render targets, and built-in controllers.
+description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.19 camera spawning, render targets, and built-in controllers.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Cameras
+# Bevy 0.19 — Cameras
 
 ## When to use this skill
 
@@ -24,7 +24,7 @@ metadata:
 `FreeCamera`/`PanCamera` are gated behind Cargo features. In `Cargo.toml`:
 
 ```toml
-bevy = { version = "0.18", features = ["free_camera", "pan_camera"] }
+bevy = { version = "0.19", features = ["free_camera", "pan_camera"] }
 ```
 
 ```rust

@@ -1,4 +1,4 @@
-# Bevy 0.18 — Runtime system removal
+# Bevy 0.19 — Runtime system removal
 
 ## The API: `remove_systems_in_set`
 

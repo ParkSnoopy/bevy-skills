@@ -1,4 +1,4 @@
-# Bevy 0.18 UI — Gotchas
+# Bevy 0.19 UI — Gotchas
 
 Cross-cutting invariants that don't belong to a single sub-topic. Most of these
 surfaced during the `ui_button` and `diplopod` parity rebuilds.
@@ -68,11 +68,11 @@ border color with whatever the system sets (e.g. `BorderColor::all(Color::BLACK)
 
 ---
 
-## 4. `InputFocus` must be explicitly initialized
+## 4. `InputFocusPlugin` owns focus initialization
 
-`app.init_resource::<InputFocus>()` is required. `DefaultPlugins` does not insert
-`InputFocus`. Missing this causes a panic at schedule-build when any system
-requests `ResMut<InputFocus>`.
+`DefaultPlugins` includes `InputFocusPlugin`, which initializes `InputFocus`.
+Only custom plugin sets that omit `InputFocusPlugin` need explicit setup before
+a system requests `ResMut<InputFocus>`.
 
 See also: [accessibility](accessibility.md).
 

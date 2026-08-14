@@ -1,21 +1,21 @@
 ---
 name: bevy-voxel-pipeline
-description: Use when meshing voxel chunks with `block-mesh-rs` (`greedy_quads` / `visible_block_faces`), translating a `GreedyQuadsBuffer` into a Bevy 0.18 `Mesh` via `try_insert_attribute`, choosing between greedy and simple meshing, or scheduling chunk meshing on `AsyncComputeTaskPool` so the main thread doesn't stall. Covers Bevy 0.18 voxel meshing.
+description: Use when meshing voxel chunks with `block-mesh-rs` (`greedy_quads` / `visible_block_faces`), translating a `GreedyQuadsBuffer` into a Bevy 0.19 `Mesh` via `try_insert_attribute`, choosing between greedy and simple meshing, or scheduling chunk meshing on `AsyncComputeTaskPool` so the main thread doesn't stall. Covers Bevy 0.19 voxel meshing.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: voxel
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Voxel meshing pipeline
+# Bevy 0.19 — Voxel meshing pipeline
 
 ## When to use this skill
 
 - Building a Minecraft-style voxel world with chunked meshing.
 - Choosing between `greedy_quads` (fewer, larger quads — best for static terrain) and `visible_block_faces` (one quad per face — best for fast remesh on edits).
-- Wiring `block-mesh-rs` output into a Bevy 0.18 `Mesh`.
+- Wiring `block-mesh-rs` output into a Bevy `Mesh`.
 - Avoiding main-thread stalls on remesh by spawning the work on `AsyncComputeTaskPool`.
 
 ## Canonical pattern
@@ -53,7 +53,7 @@ impl MergeVoxel for BlockId {
     fn merge_value(&self) -> Self::MergeValue { self.0 }
 }
 
-/// Build a Bevy 0.18 Mesh from a padded chunk of blocks.
+/// Build a Bevy Mesh from a padded chunk of blocks.
 /// Returns `None` for an entirely empty chunk so callers can skip spawning.
 pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
     assert_eq!(blocks.len(), ChunkShape::SIZE as usize);
@@ -129,7 +129,7 @@ for (entity, mut task) in &mut q {
 - **Padding is non-optional.** `block-mesh` needs one cell of padding on each axis so cross-chunk neighbour visibility computes correctly. A "16-cube" chunk is stored as 18×18×18; edits in a chunk also touch the padding of its six neighbours.
 - **Greedy vs simple.** `greedy_quads` produces 1/3 the quads of `visible_block_faces` but takes 3× longer. Use simple for chunks players are editing right now, greedy for chunks that have been stable for a while.
 - **UVs are not free.** `block-mesh` doesn't emit UVs — you compute them yourself from quad face direction and block ID. A texture atlas + per-quad offset is the standard approach (see `bevy-voxel-data`).
-- **`block-mesh-rs` is on Bevy-independent crate 0.2.0** (last updated 2022). It depends on `ilattice` and `ndshape`, both pure-Rust. Compatible with Bevy 0.18 by virtue of not depending on Bevy at all.
+- **`block-mesh-rs` 0.2.0 does not depend on Bevy**, so it remains compatible with Bevy 0.19 without a package update.
 - **Don't reach for `par_iter` inside a single chunk mesh** — block-mesh is already fast. The parallelism wins are across chunks, not within one. Spawn N chunk-mesh tasks on `AsyncComputeTaskPool`.
 - **`try_insert_attribute` returns `Result<(), MeshAccessError>`** in 0.18 — the error case is "mesh already extracted to render world", which won't happen for a freshly-`new`-d mesh. Still, handle the `Result` so the API doesn't regress on you.
 - **`RenderAssetUsages` lives in `bevy::asset`** (re-exported from `bevy::render::render_asset` privately). The public re-export is `bevy::asset::RenderAssetUsages`.

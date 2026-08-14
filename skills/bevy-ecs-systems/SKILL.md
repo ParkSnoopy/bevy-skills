@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-systems
-description: Use when deriving `SystemParam`, grouping with `SystemSet`, gating execution with `.run_if(on_message::<M>())` / `in_state(...)` / `resource_exists::<R>`, ordering with `.before`/`.after`/`.chain()`, or removing systems at runtime with `remove_systems_in_set` (new in 0.18). Covers Bevy 0.18 system params, sets, and run conditions.
+description: Use when deriving `SystemParam`, grouping with `SystemSet`, gating execution with `.run_if(on_message::<M>())` / `in_state(...)` / `resource_exists::<R>`, ordering with `.before`/`.after`/`.chain()`, or removing systems at runtime with `remove_systems_in_set` (new in 0.18). Covers Bevy 0.19 system params, sets, and run conditions.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Systems (params, sets, run conditions)
+# Bevy 0.19 — ECS Systems (params, sets, run conditions)
 
 ## When to use this skill
 

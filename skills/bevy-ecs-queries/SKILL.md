@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-queries
-description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.18 query patterns.
+description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.19 query patterns.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Queries
+# Bevy 0.19 — ECS Queries
 
 ## When to use this skill
 

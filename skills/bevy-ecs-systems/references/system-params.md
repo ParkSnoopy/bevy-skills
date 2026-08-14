@@ -1,4 +1,4 @@
-# Bevy 0.18 — SystemParam deep dive
+# Bevy 0.19 — SystemParam deep dive
 
 ## Derive basics
 

@@ -91,7 +91,7 @@ Bevy faithfully renders what you give it. However, the rendering setup does matt
   export scale can produce a 100× mismatch in Bevy scenes. Check that the character
   is the expected size after spawning. The canonical fix is to apply all transforms
   in Blender before export (`Ctrl+A → All Transforms`) and use Bevy's
-  `SceneRoot` / `Transform::from_scale` to adjust if needed.
+  `WorldAssetRoot` / `Transform::from_scale` to adjust if needed.
 - **`Name` component is required for `AnimationTargetId::from_name`.** The glTF
   loader sets `Name` on bone entities automatically from the node names in the file.
   If you rename bones after export (e.g. in a post-process step), the

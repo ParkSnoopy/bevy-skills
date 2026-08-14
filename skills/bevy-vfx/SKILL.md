@@ -13,7 +13,7 @@ metadata:
 
 ## Compatibility status
 
-Both major VFX crates pin Bevy 0.18 cleanly — no patches required (unlike `bevy_capture`):
+This composite skill remains on Bevy 0.18 because every documented package must share one Bevy version. `bevy_hanabi 0.19.0`, `bevy_vector_shapes 0.13.1`, and `bevy_spritesheet_animation 7.0.1` support Bevy 0.19, but `bevy_spark 0.2.0` still requires Bevy 0.18:
 
 - `bevy_hanabi = "0.18.0"` (published 2026-02-01) for GPU-compute particles.
 - `bevy_spark = "0.2.0"` (published 2026-05-04, repo `htdt/bevy_spark`) for Gaussian-splat rendering.

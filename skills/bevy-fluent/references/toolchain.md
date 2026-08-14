@@ -1,23 +1,23 @@
 # bevy-fluent — Toolchain Requirements
 
-## Minimum Rust version: 1.95
+## Minimum Rust version: 1.96
 
-`es-fluent 0.15.x` uses language features stabilized in **Rust 1.95**. Older
+`es-fluent-manager-bevy 0.19.2` declares **Rust 1.96** as its minimum supported version. Older
 toolchains fail with cryptic trait-resolution or proc-macro errors that do not
 point at the actual cause.
 
 Common symptom on older toolchains:
 
 ```
-error[E0277]: the trait bound `UiMessage: ToFluentString` is not satisfied
+error[E0277]: the trait bound `UiMessage: FluentMessage` is not satisfied
   --> src/lib.rs:8:10
    |
-8  | #[derive(BevyFluentText, Clone, EsFluent, Component)]
-   |          ^^^^^^^^^^^^^^ the trait `ToFluentString` is not implemented for `UiMessage`
+8  | #[derive(BevyFluentText, Clone, EsFluent)]
+   |          ^^^^^^^^^^^^^^ the trait `FluentMessage` is not implemented for `UiMessage`
 ```
 
 This error appears even when `EsFluent` is derived correctly — it is caused by
-the proc-macro failing silently on a pre-1.95 compiler, leaving the trait
+the proc-macro failing silently on a pre-1.96 compiler, leaving the trait
 unimplemented.
 
 ---
@@ -28,7 +28,7 @@ Add a `rust-toolchain.toml` at the crate root:
 
 ```toml
 [toolchain]
-channel = "1.95"
+channel = "1.96"
 ```
 
 Rustup reads this file and automatically downloads and uses the pinned version
@@ -53,8 +53,8 @@ When `es-fluent` releases a version that requires a newer compiler, update
 To check compilation on a specific version without changing `rust-toolchain.toml`:
 
 ```sh
-cargo +1.95 check
-cargo +1.95 build
+cargo +1.96 check
+cargo +1.96 build
 ```
 
 This is useful when bisecting a toolchain regression.
@@ -65,8 +65,8 @@ This is useful when bisecting a toolchain regression.
 
 ```yaml
 # .github/workflows/ci.yml
-- name: Install Rust 1.95
-  uses: dtolnay/rust-toolchain@1.95
+- name: Install Rust 1.96
+  uses: dtolnay/rust-toolchain@1.96
 
 - name: Build
   run: cargo build
@@ -90,7 +90,7 @@ If you set `default-features = false` (common in size-sensitive game projects),
 you must re-add `macros` explicitly:
 
 ```toml
-es-fluent-manager-bevy = { version = "0.18", default-features = false, features = ["macros"] }
+es-fluent-manager-bevy = { version = "0.19.2", default-features = false, features = ["macros"] }
 ```
 
 Without the `macros` feature the proc-macro crate is not compiled and

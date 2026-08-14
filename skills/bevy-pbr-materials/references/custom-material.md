@@ -1,4 +1,4 @@
-# Bevy 0.18 — Custom Material Reference
+# Custom Material Reference
 
 Writing a custom `Material` with `AsBindGroup`. See also
 [lighting](lighting.md) and [mesh-primitives](mesh-primitives.md).
@@ -7,7 +7,7 @@ Writing a custom `Material` with `AsBindGroup`. See also
 
 ## Complete Example: DissolveMaterial
 
-The following snippet is verified to compile against Bevy 0.18.
+The following snippet targets the parent skill's pinned Bevy version.
 
 ```rust
 use bevy::asset::{Asset, AssetPath};
@@ -99,7 +99,7 @@ impl Material for MyMaterial {
     }
 
     // Low-level: specialise the render pipeline (e.g. to change primitive topology).
-    // Use `SpecializedMeshPipelineError` from bevy::pbr.
+    // Use `SpecializedMeshPipelineError` from bevy::material.
     // fn specialize(...) -> Result<...> { ... }
 }
 ```
