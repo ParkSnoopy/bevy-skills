@@ -1,4 +1,4 @@
-# Bevy 0.18 — Mesh Primitives Reference
+# Bevy 0.19 — Mesh Primitives Reference
 
 Built-in `bevy_math` shapes and how to spawn them as meshes. See also
 [lighting](lighting.md) and [custom-material](custom-material.md).
@@ -69,7 +69,8 @@ let uv_sphere = meshes.add(Sphere::new(0.5).mesh().uv(32, 18));
 
 // Icosphere (uniform-area triangles). Subdivision 5 is a good default;
 // returns Result because too-deep subdivision overflows the index buffer.
-let ico_sphere = meshes.add(Sphere::new(0.5).mesh().ico(5).unwrap());
+let Ok(ico_mesh) = Sphere::new(0.5).mesh().ico(5) else { return };
+let ico_sphere = meshes.add(ico_mesh);
 
 // Or build via SphereKind explicitly.
 use bevy::mesh::{SphereKind, SphereMeshBuilder};

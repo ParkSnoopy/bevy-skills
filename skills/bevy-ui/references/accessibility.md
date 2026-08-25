@@ -1,99 +1,52 @@
-# Bevy 0.18 UI — Accessibility (`InputFocus`)
+# Bevy 0.19 UI accessibility
 
-## Quick reference
+## Focus setup
 
-| Item | Purpose |
-|---|---|
-| `InputFocus` | Resource tracking which entity currently has logical focus. |
-| `bevy::input_focus::InputFocus` | Full import path. |
-| `app.init_resource::<InputFocus>()` | Required — not inserted by `DefaultPlugins`. |
-| `input_focus.set(entity)` | Give focus to an entity (e.g. on `Pressed` / `Hovered`). |
-| `input_focus.clear()` | Clear focus (e.g. on `Interaction::None`). |
-| `input_focus.get()` | Returns `Option<Entity>` — the currently focused entity. |
-
-## Why `InputFocus` exists
-
-Bevy integrates with platform accessibility trees (AT — screen readers, switch
-access, magnification software) via `bevy_a11y`. The `InputFocus` resource is the
-bridge: when you call `input_focus.set(entity)`, Bevy notifies the AT that focus
-has moved to that entity. Without this, keyboard-only or screen-reader users
-receive no feedback when a button is hovered or pressed.
-
-`InputFocus` also drives Bevy's internal focus-dispatch system: `KeyboardInput`
-events are routed to the focused entity rather than broadcast globally.
-
-## Common patterns
-
-### Minimal setup
+`DefaultPlugins` includes `InputFocusPlugin` in Bevy 0.19, so do not initialize
+`InputFocus` a second time. Minimal/headless plugin sets must add the plugin
+explicitly if they use focus dispatch.
 
 ```rust
-use bevy::{input_focus::InputFocus, prelude::*};
+use bevy::{
+    input_focus::{FocusCause, InputFocus},
+    prelude::*,
+};
 
-fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins)
-        .init_resource::<InputFocus>() // must be explicit
-        .add_systems(Startup, setup)
-        .add_systems(Update, button_system)
-        .run();
-}
-```
-
-### Setting and clearing focus in an interaction system
-
-```rust
-use bevy::{input_focus::InputFocus, prelude::*};
-
-fn button_system(
-    mut input_focus: ResMut<InputFocus>,
-    mut query: Query<(Entity, &Interaction, &mut Button), Changed<Interaction>>,
+fn focus_pressed_button(
+    mut focus: ResMut<InputFocus>,
+    buttons: Query<(Entity, &Interaction), (Changed<Interaction>, With<Button>)>,
 ) {
-    for (entity, interaction, mut button) in &mut query {
-        match *interaction {
-            Interaction::Pressed | Interaction::Hovered => {
-                input_focus.set(entity);
-                button.set_changed(); // notify a11y system
-            }
-            Interaction::None => {
-                input_focus.clear();
-            }
+    for (entity, interaction) in &buttons {
+        if *interaction == Interaction::Pressed {
+            focus.set(entity, FocusCause::Pressed);
         }
     }
 }
 ```
 
-### Reading the current focus (e.g. for custom keyboard handling)
+Use `FocusCause::Navigated` for keyboard/gamepad navigation and
+`FocusCause::Pressed` for a primary pointer press. Read with `focus.get()` and
+clear only when the UI flow intentionally has no focused control. Hover is not
+focus.
 
-```rust
-use bevy::{input_focus::InputFocus, prelude::*};
+## Semantics and names
 
-fn keyboard_dispatch(
-    input_focus: Res<InputFocus>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-) {
-    if keyboard.just_pressed(KeyCode::Enter) {
-        if let Some(focused) = input_focus.get() {
-            println!("Enter pressed while {focused:?} is focused");
-        }
-    }
-}
-```
+Bevy creates accessibility nodes for standard UI `Button`, `Label`, and image
+components. Text children are used to infer names. Add an explicit
+`AccessibleLabel::new("...")` to icon-only or ambiguous controls; update that
+component when the name changes.
 
-## Pitfalls
+For nonstandard widgets, add `bevy_a11y::AccessibilityNode` with an AccessKit
+role, state, value, actions, and relationships. Depend directly on the same
+AccessKit line Bevy uses (`accesskit = "0.24"`) only when the convenience
+components cannot express the widget.
 
-- **`init_resource::<InputFocus>()` is NOT automatic.** `DefaultPlugins` does not
-  insert `InputFocus`. If you query `ResMut<InputFocus>` without initializing it,
-  the app will panic at schedule-build with a missing resource error.
+Keyboard tab order and spatial gamepad navigation are separate concerns. Add
+`TabNavigationPlugin` with `TabGroup`/`TabIndex`, or directional navigation with
+`AutoDirectionalNavigation`; neither should be inferred from pointer hover.
 
-- **`input_focus` path changed in 0.18.** The correct import is
-  `bevy::input_focus::InputFocus`. It is *not* re-exported from `bevy::prelude`
-  in 0.18 — you must import it explicitly.
+## Boundary
 
-- **`button.set_changed()` and `InputFocus` work together.** Calling only one
-  without the other may result in the AT being notified but not updating, or
-  updating without the button's accessibility node being refreshed. Always call
-  both in `Pressed` and `Hovered` arms.
-
-- **Clearing focus at `Interaction::None` is intentional.** If you do not clear
-  focus when the cursor leaves a button, the AT will still consider that button
-  focused even when no button is visually highlighted. This is confusing to AT users.
+This reference covers Bevy UI primitives. Use [`bevy-a11y`](../../bevy-a11y/SKILL.md)
+for captions, contrast, remapping, adaptive controllers, non-visual gameplay,
+testing with disabled players, and release gates.

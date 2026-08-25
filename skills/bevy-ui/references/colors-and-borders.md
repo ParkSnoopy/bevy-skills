@@ -1,4 +1,4 @@
-# Bevy 0.18 UI — Colors and Borders
+# Bevy 0.19 UI — Colors and Borders
 
 ## Quick reference
 
@@ -110,9 +110,9 @@ fn tab_shape() -> impl Bundle {
   without `border: UiRect::all(px(N))` on `Node` renders no visible border.
 
 - **`BackgroundColor(Color::NONE)` vs omitting `BackgroundColor`.** Both appear
-  transparent, but an entity with `BackgroundColor(Color::NONE)` still participates
-  in hit-testing via `Button`. If you want a transparent, clickable region, set
-  `BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.0))` rather than omitting the component.
+  transparent, and hit testing comes from the `Button`/layout rather than the fill.
+  Keep an explicit transparent `BackgroundColor` when styling systems will mutate it;
+  it is not required solely to make the region clickable.
 
 - **`BorderRadius` clamps at `BorderRadius::MAX`.** Values above `MAX` are clamped,
   not wrapped. Use `MAX` for a pill; don't compute `f32::MAX` manually.

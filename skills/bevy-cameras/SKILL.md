@@ -1,15 +1,15 @@
 ---
 name: bevy-cameras
-description: Use when spawning `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with the new 0.18 `RenderTarget` component (no longer a `Camera` field), wiring up `FreeCamera`/`PanCamera` from `bevy::camera_controller::*`, or setting a per-camera `AmbientLight` override. Covers Bevy 0.18 camera spawning, render targets, and built-in controllers.
+description: Use when spawning Bevy 0.19 `Camera3d` or `Camera2d`, choosing perspective or orthographic `Projection`, rendering to an image with a `RenderTarget` component, wiring `FreeCamera`/`PanCamera`, ordering multiple views, or setting a per-camera `AmbientLight` override.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: render
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Cameras
+# Bevy 0.19 — Cameras
 
 ## When to use this skill
 
@@ -17,14 +17,14 @@ metadata:
 - Rendering to a texture (mini-map, portal, post-process target).
 - Wanting a drop-in free-look or pan controller without writing your own.
 - Configuring multiple cameras with different `order` for overlays.
-- Setting ambient brightness on a per-camera basis (new in 0.18).
+- Setting ambient brightness on a per-camera basis.
 
 ## Canonical pattern
 
 `FreeCamera`/`PanCamera` are gated behind Cargo features. In `Cargo.toml`:
 
 ```toml
-bevy = { version = "0.18", features = ["free_camera", "pan_camera"] }
+bevy = { version = "0.19", features = ["free_camera", "pan_camera"] }
 ```
 
 ```rust
@@ -86,7 +86,7 @@ use bevy::prelude::*;
 use bevy::camera::Projection;
 
 # fn _proj(mut commands: Commands) {
-// Default perspective (90° FOV is the Bevy default).
+// Default perspective (45° vertical FOV).
 commands.spawn((Camera3d::default(), Projection::default()));
 
 // Orthographic for top-down or strategy views.
@@ -113,21 +113,27 @@ app.insert_resource(GlobalAmbientLight {
     ..default()
 });
 
-// Per-camera override (new in 0.18 — `AmbientLight` is now a Component).
+// Per-camera override (`AmbientLight` is a Component).
 commands.spawn((Camera3d::default(), AmbientLight { brightness: 1000.0, ..default() }));
 # }
 ```
 
-## Gotchas (0.18)
+## Bevy 0.19 gotchas
 
-- **`RenderTarget` is a separate component.** `Camera { target: RenderTarget::Image(...) }` is gone — wrong shape in 0.18. Spawn it alongside `Camera3d` / `Camera`.
+- **`RenderTarget` is a separate component.** `Camera { target: ... }` is an old
+  shape. Spawn `RenderTarget` alongside `Camera3d` / `Camera`.
 - **`AmbientLight` is no longer a `Resource`.** It's a per-camera component. The world default lives in the `GlobalAmbientLight` resource.
 - **`ImageRenderTarget::scale_factor` is `f32`** (used to be wrapped in `FloatOrd`).
 - **Camera `order` is signed.** Lower values render first. Use `order: -1` for off-screen passes you'll sample in the main pass.
-- **`FreeCamera` / `PanCamera` need their plugin AND their Cargo feature.** They're feature-gated in 0.18: add `features = ["free_camera", "pan_camera"]` to the `bevy` dep. Spawning the component without `FreeCameraPlugin` / `PanCameraPlugin` does nothing — the input systems live in the plugin.
+- **`FreeCamera` / `PanCamera` need their plugin and Cargo feature.** Add
+  `features = ["free_camera", "pan_camera"]`; spawning only the component does not
+  install its input systems.
 - **Imports**: `bevy::camera::RenderTarget`, `bevy::camera_controller::{free_camera::*, pan_camera::*}`, `bevy::light::GlobalAmbientLight`. None are in the prelude.
 
 ## See also
 
-- `bevy-pbr-materials` — what cameras render through.
-- `bevy-migration-0-17-to-0-18` — full `Camera.target` and `AmbientLight` rename.
+- [`bevy-rendering`](../bevy-rendering/SKILL.md) — renderer choice, forward/deferred,
+  and render systems.
+- [`bevy-pbr-materials`](../bevy-pbr-materials/SKILL.md) — lighting and camera-visible
+  materials.
+- [`bevy-a11y`](../bevy-a11y/SKILL.md) — FOV, shake, motion, and viewport accessibility.

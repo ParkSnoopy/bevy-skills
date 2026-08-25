@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-systems
-description: Use when deriving `SystemParam`, grouping with `SystemSet`, gating execution with `.run_if(on_message::<M>())` / `in_state(...)` / `resource_exists::<R>`, ordering with `.before`/`.after`/`.chain()`, or removing systems at runtime with `remove_systems_in_set` (new in 0.18). Covers Bevy 0.18 system params, sets, and run conditions.
+description: Use when deriving `SystemParam`, grouping with `SystemSet`, gating execution with `.run_if(on_message::<M>())`/`in_state(...)`/`resource_exists::<R>`, ordering with `.before`/`.after`/`.chain()`, removing systems with `remove_systems_in_set`, or adapting resource bounds in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Systems (params, sets, run conditions)
+# Bevy 0.19 — ECS Systems (params, sets, run conditions)
 
 ## When to use this skill
 
@@ -117,14 +117,20 @@ Combine with `.and()` / `.or()`: `run_if(in_state(GameState::Playing).and(resour
 | Every built-in condition, `.and()`/`.or()`/`not()`, custom conditions, cost rule | [references/run-conditions.md](references/run-conditions.md) |
 | `OnEnter(S)` / `OnExit(S)` / `OnTransition`, `NextState<S>`, `set_if_neq` | [references/state-schedules.md](references/state-schedules.md) |
 | `.before`, `.after`, `.chain()`, `.ambiguous_with`, debugging ambiguity errors | [references/ordering.md](references/ordering.md) |
-| `remove_systems_in_set`, `ScheduleCleanupPolicy`, 3-arg vs 4-arg receivers, side-effect limits | [references/runtime-removal.md](references/runtime-removal.md) |
+| `remove_systems_in_set`, cleanup policies, cross-schedule runtime removal, side-effect limits | [references/runtime-removal.md](references/runtime-removal.md) |
 
-## Gotchas (0.18)
+## Bevy 0.19 gotchas
 
-- **`SimpleExecutor` is gone.** Any ambiguity between systems sharing data is now a build-time error. Fix with `.before`, `.after`, `.chain()`, or `.ambiguous_with(other)` (explicit accept). See [references/ordering.md](references/ordering.md).
+- **Shared access does not define order.** Conflicting mutable systems are serialized,
+  but their relative order is unspecified. Enable ambiguity diagnostics and add
+  `.before`, `.after`, or `.chain()` when behavior depends on order. See
+  [references/ordering.md](references/ordering.md).
 - **`MessageReader` / `MessageWriter`, not `EventReader` / `EventWriter`.** Renamed in 0.17. Trait derive is `#[derive(Message)]`; registrar is `app.add_message::<M>()`.
 - **`next_state.set(S)` always fires `OnExit`/`OnEnter` in 0.18.** Use `set_if_neq` for the old behaviour. See [references/state-schedules.md](references/state-schedules.md).
-- **`Schedules::remove_systems_in_set` takes 4 args in 0.18** (`schedule_label`, `set`, `world`, `ScheduleCleanupPolicy`); `Schedule::remove_systems_in_set` takes 3. See [references/runtime-removal.md](references/runtime-removal.md).
+- **Do not remove the currently running schedule through `Schedules`.** It is
+  temporarily absent from that resource. Remove `Update` systems from a later/different
+  schedule such as `Last`. See [references/runtime-removal.md](references/runtime-removal.md).
+- **`Resource: Component` in 0.19.** Generic system parameters still use `Res<T>`/`ResMut<T>`, but a `T: Resource` bound no longer proves that `T` cannot appear in a component query.
 
 ## See also
 
@@ -132,3 +138,4 @@ Combine with `.and()` / `.or()`: `run_if(in_state(GameState::Playing).and(resour
 - `bevy-ecs-queries` — query is one of many `SystemParam`s; `Changed<T>` / `Added<T>` filters.
 - `bevy-ecs-components` — defining the `Component` types your systems act on.
 - `bevy-migration-0-17-to-0-18` — full Message/Event rename, `MaterialPlugin` changes.
+- `bevy-migration-0-18-to-0-19` — resource bounds and executor configuration.

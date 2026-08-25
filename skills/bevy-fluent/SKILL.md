@@ -1,19 +1,19 @@
 ---
 name: bevy-fluent
-description: Use when adding localization to a Bevy 0.18 app with `es-fluent-manager-bevy`, defining typed messages with `#[derive(EsFluent)]`, wrapping UI text in `FluentText<T>`, auto-registering locale updates with `#[derive(BevyFluentText)]`, or reacting to locale switches via `LocaleChangeEvent`. Covers `I18nPlugin`, `RequestedLanguageId`, `i18n.toml` config, and hot-reload of `.ftl` assets.
+description: Use when adding localization to a Bevy 0.19 app with `es-fluent-manager-bevy`, defining typed messages with `#[derive(EsFluent)]`, wrapping UI text in `FluentText<T>`, auto-registering locale updates with `#[derive(BevyFluentText)]`, or reacting to locale switches via `LocaleChangeEvent`. Covers `I18nPlugin`, `RequestedLanguageId`, `i18n.toml` config, and hot-reload of `.ftl` assets.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: i18n
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Localization (es-fluent)
+# Bevy 0.19 — Localization (es-fluent)
 
 ## When to use this skill
 
-- Adding Fluent-based i18n to a Bevy app (`es-fluent-manager-bevy = "0.18"`).
+- Adding Fluent-based i18n to a Bevy app (`es-fluent-manager-bevy = "0.19.2"`).
 - Defining typed UI messages with `#[derive(EsFluent)]` and `#[derive(BevyFluentText)]`.
 - Wrapping a UI text entity with `FluentText<T>` for automatic locale-driven refresh.
 - Switching locales at runtime via `LocaleChangeEvent`.
@@ -25,9 +25,9 @@ metadata:
 
 ```toml
 [dependencies]
-bevy                   = "0.18"
-es-fluent              = { version = "0.15", features = ["derive"] }
-es-fluent-manager-bevy = { version = "0.18", features = ["macros"] }
+bevy                   = "0.19"
+es-fluent              = { version = "0.18.1", features = ["derive"] }
+es-fluent-manager-bevy = { version = "0.19.2", features = ["macros"] }
 unic-langid            = "0.9"
 ```
 
@@ -56,7 +56,7 @@ use unic_langid::langid;
 
 pub mod i18n;
 
-#[derive(BevyFluentText, Clone, EsFluent, Component)]
+#[derive(BevyFluentText, Clone, EsFluent)]
 #[fluent(namespace = "ui")]
 pub enum UiMessage { StartGame, Settings, QuitGame }
 
@@ -108,11 +108,11 @@ and pure-binary-crate workarounds — is in
 | Topic | Reference |
 |-------|-----------|
 | Why types must live in the lib target; `cargo es-fluent generate` invisibility footgun; full layout | [references/lib-target-layout.md](references/lib-target-layout.md) |
-| `BevyFluentText` derive vs `FluentText<T>` component; `Component` bound; `Text::new("")` | [references/components.md](references/components.md) |
+| `BevyFluentText` derive vs `FluentText<T>` component; `Text::new("")` | [references/components.md](references/components.md) |
 | `LocaleChangeEvent` (request) vs `LocaleChangedEvent` (confirmation); `RequestedLanguageId`; Messages vs Events | [references/locale-events.md](references/locale-events.md) |
 | `i18n.toml` full schema, `assets_dir`, `I18nPluginConfig` runtime override | [references/i18n-toml.md](references/i18n-toml.md) |
 | `generate`, `watch`, `check`, `clean`, `sync`, `tree`, `format` — dev and CI workflows | [references/cli.md](references/cli.md) |
-| rustc 1.95+ requirement; `rust-toolchain.toml` pin; failure modes on older toolchains | [references/toolchain.md](references/toolchain.md) |
+| rustc 1.96+ requirement; `rust-toolchain.toml` pin; failure modes on older toolchains | [references/toolchain.md](references/toolchain.md) |
 
 ## Gotchas
 
@@ -124,15 +124,14 @@ and pure-binary-crate workarounds — is in
 
 2. **`BevyFluentText` is a derive macro; `FluentText<T>` is the component.** The
    derive registers refresh systems via `inventory`. The component is what you
-   spawn on UI entities. Your message enum `T` must also derive `Component`
-   because `FluentTextRegistration::register_fluent_text` requires
-   `T: ToFluentString + Clone + Component + Send + Sync + 'static`. Missing
-   `Component` gives a confusing trait-bound error. See
+   spawn on UI entities. In 0.19.2 the message type needs
+   `FluentMessage + Clone + Send + Sync + 'static`; it does not derive
+   `Component` itself. See
    [references/components.md](references/components.md).
 
-3. **Minimum rustc 1.95.** Older toolchains fail with cryptic trait-resolution
+3. **Minimum rustc 1.96.** Older toolchains fail with cryptic trait-resolution
    errors that do not mention the version requirement. Pin with
-   `rust-toolchain.toml` (`[toolchain]` / `channel = "1.95"`). See
+   `rust-toolchain.toml` (`[toolchain]` / `channel = "1.96"`). See
    [references/toolchain.md](references/toolchain.md).
 
 4. **Events are Messages.** Use `MessageWriter<LocaleChangeEvent>` and

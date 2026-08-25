@@ -52,14 +52,13 @@ settings menu) without waiting for asset loading.
 
 ## `ActiveLanguageId` — what is actually loaded
 
-`ActiveLanguageId` (if exported in the version you are using) reflects the
+`ActiveLanguageId` reflects the
 locale whose bundles are **currently active and ready**. It lags behind
 `RequestedLanguageId` by the time it takes Bevy's `AssetServer` to load the
 `.ftl` files for the new locale.
 
-If `ActiveLanguageId` is not exported in your version of
-`es-fluent-manager-bevy`, react to `LocaleChangedEvent` instead — it fires
-exactly once when the new locale is ready.
+React to `LocaleChangedEvent` when a system must run exactly when the new locale
+is ready.
 
 ---
 
@@ -100,14 +99,11 @@ The plugin inserts `RequestedLanguageId` with this value before any systems run.
 
 ---
 
-## Pitfalls
+## Imperative localization
 
-### `BevyI18n` system param not exported in crates.io release
-
-`BevyI18n` system param (imperative localization) exists in the GitHub source
-but is **not exported in crates.io `0.18.12`**. If you need imperative lookup
-in a system, query `I18nBundle` and `I18nResource` directly, or wait for a
-later release.
+`es-fluent-manager-bevy 0.19.2` exports the `BevyI18n` system parameter. Use it
+for localized window titles, gameplay strings, or other output that is not a
+`Text` entity; keep `FluentText<T>` for reactive UI.
 
 ---
 

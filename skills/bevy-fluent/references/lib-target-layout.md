@@ -61,9 +61,9 @@ name = "my-game"
 path = "src/main.rs"
 
 [dependencies]
-bevy                   = "0.18"
-es-fluent              = { version = "0.15", features = ["derive"] }
-es-fluent-manager-bevy = { version = "0.18", features = ["macros"] }
+bevy                   = "0.19"
+es-fluent              = { version = "0.18.1", features = ["derive"] }
+es-fluent-manager-bevy = { version = "0.19.2", features = ["macros"] }
 unic-langid            = "0.9"
 ```
 
@@ -98,7 +98,7 @@ use unic_langid::langid;
 
 pub mod i18n;
 
-#[derive(BevyFluentText, Clone, EsFluent, Component)]
+#[derive(BevyFluentText, Clone, EsFluent)]
 #[fluent(namespace = "ui")]
 pub enum UiMessage {
     StartGame,

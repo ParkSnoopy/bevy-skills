@@ -1,4 +1,4 @@
-# Bevy 0.18 — State schedules: OnEnter, OnExit, OnTransition
+# Bevy 0.19 — State schedules: OnEnter, OnExit, OnTransition
 
 This is the **parity-trial gap** topic. Neither `OnEnter` nor `OnExit` appeared in
 the previous skill body. This file closes that gap.
@@ -91,7 +91,7 @@ the old state and `OnEnter` of the new state fire immediately after.
 
 ## `set` vs `set_if_neq` — the always-fires change
 
-In Bevy 0.18, calling `next_state.set(S::X)` **always** marks `NextState` as
+In Bevy 0.19, calling `next_state.set(S::X)` **always** marks `NextState` as
 changed, even if `S::X` is already the current state. This means `OnExit` and
 `OnEnter` will fire again unnecessarily.
 
@@ -121,7 +121,7 @@ Mixing both approaches is fine and common: use `OnEnter` to spawn entities, use
 
 ## State stacks, sub-states, computed states (brief)
 
-Bevy 0.18 also supports:
+Bevy 0.19 also supports:
 - **Sub-states** (`#[derive(SubStates)]`) — a state whose existence depends on a
   parent state. Useful for "in-game-menu within gameplay".
 - **Computed states** (`#[derive(ComputedStates)]`) — a state derived from one

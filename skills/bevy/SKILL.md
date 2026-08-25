@@ -1,17 +1,21 @@
 ---
 name: bevy
-description: Use when starting any Bevy task, choosing between Update and FixedUpdate, picking Cargo feature flags, or recalling which sibling skill covers ECS, assets, rendering, or migration. Routes to the right Bevy 0.18 skill and pins the engine version for downstream snippets.
+description: Use when starting any Bevy task, choosing between Update and FixedUpdate, picking Cargo feature flags, or recalling which sibling skill covers ECS, assets, rendering, or migration. Routes to the right Bevy 0.19 skill and pins the engine version for downstream snippets.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: router
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Router
+# Bevy 0.19 — Router
 
-**Read this first when working on a Bevy project.** All sibling skills assume Bevy 0.18 (released 2026-01-13). If the user's `Cargo.toml` pins a different version, stop and confirm before applying patterns from this collection.
+**Read this first when working on a Bevy project.** All current implementation
+sibling skills assume Bevy 0.19 (released 2026-06-19); historical migration
+skills deliberately describe their source versions. If the user's `Cargo.toml`
+pins a different version, stop and confirm before applying current patterns from
+this collection.
 
 ## Smallest valid app
 
@@ -36,38 +40,58 @@ fn setup(mut commands: Commands) {
 |---|---|
 | App / Plugin / Schedule basics, Update vs FixedUpdate, exclusive systems | `bevy-core-concepts` |
 | `#[derive(Component)]`, `#[require(...)]`, observers (`On<E>`), hooks, storage | `bevy-ecs-components` |
-| `Query`, `With`/`Without`/`Or`, `Changed`/`Added`, `par_iter`, query lenses, `ArchetypeQueryData` | `bevy-ecs-queries` |
+| `Query`, filters, `par_iter`, query lenses, `IterQueryData`, `SingleEntityQueryData` | `bevy-ecs-queries` |
 | `SystemParam`, `SystemSet`, `.run_if`, ordering, `remove_systems_in_set` | `bevy-ecs-systems` |
 | `Cargo.toml` features: `2d`/`3d`/`ui`, mid-level `2d_api`, renamed features | `bevy-cargo-features` |
 | Upgrading from 0.17 — `MessageReader`, `On`, `RenderTarget`, `GlobalAmbientLight`, etc. | `bevy-migration-0-17-to-0-18` |
+| Upgrading from 0.18 — resources-as-components, `FontSource`, `WorldAssetRoot`, `Discard` | `bevy-migration-0-18-to-0-19` |
 | `AssetServer`, `Handle<T>`, hot-reload, `short-type-path`, `SeekableReader` | `bevy-assets` |
-| Writing an `AssetLoader` (must `#[derive(TypePath)]` in 0.18) | `bevy-custom-assets` |
+| Writing an `AssetLoader`, `LoadContext::load_builder`, `SeekableReader` | `bevy-custom-assets` |
 | WASM build pipeline, WebGPU vs WebGL2 | `bevy-wasm-webgpu` |
 | `Camera3d`, `Projection`, `RenderTarget` component, `FreeCamera`, `PanCamera` | `bevy-cameras` |
-| `StandardMaterial`, `MaterialPlugin<M>`, `AsBindGroup::label()`, 0.18 PBR shading fix | `bevy-pbr-materials` |
+| Built-in renderer vs custom/headless/external paths, forward vs deferred | `bevy-rendering` |
+| `RapierPhysicsPlugin`, `RigidBody`, `Collider`, collision queries, character controllers | `bevy-physics` |
+| `StandardMaterial`, `MaterialPlugin<M>`, `AsBindGroup::label()`, PBR tuning | `bevy-pbr-materials` |
+| glTF clips, `AnimationGraph`, transitions, masks, events, procedural animation | `bevy-animation` |
+| Hanabi particles, shaders, Gaussian splats, compatible VFX crates | `bevy-vfx` |
 | Voxel meshing with `block-mesh-rs`, chunk pipeline, greedy quads | `bevy-voxel-pipeline` |
 | RON block definitions, palette, KTX2 atlas baking | `bevy-voxel-data` |
+| Camera recording, MP4/PNG encoders, ffmpeg integration | `bevy-capture` |
 | `es-fluent-manager-bevy` i18n — `FluentText<T>`, `BevyFluentText`, `LocaleChangeEvent`, `i18n.toml` | `bevy-fluent` |
 | `Node`, `Button`, `Interaction`, `children![]`, `TextFont`, `InputFocus`, `BorderRadius`, `BackgroundColor` | `bevy-ui` |
+| Screen readers, focus navigation, captions, contrast, remapping, adaptive controllers | `bevy-a11y` |
+| Porting from Unity, Unreal, Godot, Cocos, web engines, Flash, Defold, Roblox, or GameMaker | `bevy-porting` |
 | Detecting copy-paste / near-duplicate Rust code before committing (`similarity-rs --cross-file`) | `similarity-rs` |
 
-## Cardinal rules (every Bevy 0.18 task)
+## Cardinal rules (every Bevy 0.19 task)
 
-1. **Events are messages.** `EventReader<E>` and `EventWriter<E>` were renamed to `MessageReader<M>` / `MessageWriter<M>` in 0.17. Still wrong if Claude writes the old name in 0.18.
+1. **Events are messages.** `EventReader<E>` and `EventWriter<E>` were renamed to `MessageReader<M>` / `MessageWriter<M>` in 0.17. They are still wrong in 0.19.
 2. **Observers use `On<E>`, not `Trigger<E>`.** `Trigger` was renamed in 0.17 (PR #19596).
-3. **Schedule order is explicit.** `SimpleExecutor` was removed in 0.18 — ambiguous orderings panic at schedule-build. Use `.before()` / `.after()` / `.chain()`.
+3. **Declare order when behavior depends on it.** Shared mutable access prevents
+   parallel execution but does not choose a logical order. Use `.before()`, `.after()`,
+   or `.chain()`, especially when deferred commands must be visible downstream.
 4. **No `.unwrap()` in systems.** Systems run every frame. Use `let ... else { return };` or a real error path.
-5. **State changes always trigger transitions** in 0.18. Use `set_if_neq` if you need 0.17 behavior.
-6. **`RenderTarget` is its own component** in 0.18, not a field on `Camera`.
-7. **`Mesh::insert_attribute` → `try_insert_attribute(...)?`** — returns `Result` in 0.18.
+5. **Resources are singleton components in 0.19.** Each resource lives on a
+   resource entity. Inserting the same `Resource` type on an ordinary entity can
+   move singleton ownership, so do not mix resource and ordinary-component use;
+   audit broad `Query<&T>` access.
+6. **Text uses `FontSource` and `FontSize`.** Convert handles with `.into()` and sizes with `FontSize::Px(...)`.
+7. **Classic scene serialization moved.** Use `bevy_world_serialization`, `WorldAssetRoot`, and `DynamicWorld`; `bevy_scene` now hosts BSN.
+8. **Lifecycle replacement is discard.** Use `Discard`, `on_discard`, and `#[component(on_discard = ...)]`.
+9. **Camera render nodes became systems.** Extend `Core2d`/`Core3d` with render
+   systems. The top-level non-camera schedule named `RenderGraph` still exists.
+10. **Physics is a plugin choice.** Bevy core has no rigid-body engine. Use
+    `bevy-physics` for the current Rapier/Avian boundary, schedules, and APIs.
 
 ## Gotchas
 
-- Bevy's training-data footprint is dominated by 0.10–0.15 code. If a snippet feels obvious, double-check it against `bevy-migration-0-17-to-0-18` before trusting it.
+- Bevy's training-data footprint is dominated by older code. Check both migration skills before trusting an apparently familiar snippet.
 - `bevy::prelude::*` doesn't re-export everything. Many ECS internals live under `bevy::ecs::...` — import explicitly when needed.
 - The `bevy` crate now re-exports many subcrates (`bevy_camera`, `bevy_light`, `bevy_post_process`, `bevy_anti_alias`, `bevy_input_focus`, `bevy_gizmos_render`, `bevy_sprite_render`, `bevy_ui_render`). Subcrate APIs are stable points to depend on for plugins.
 
 ## See also
 
-- `bevy-migration-0-17-to-0-18` — the catalogue of renames and breaks.
+- `bevy-migration-0-18-to-0-19` — current upgrade catalogue.
+- `bevy-migration-0-17-to-0-18` — historical rename catalogue.
 - `bevy-cargo-features` — what to put in `Cargo.toml` before any of the above will compile the way you want.
+- `bevy-physics` — Rapier setup, fixed-step ordering, queries, and controllers.

@@ -1,4 +1,4 @@
-# bevy-porting — Roblox → Bevy 0.18
+# bevy-porting — Roblox → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Engine coverage`.
 
@@ -17,7 +17,7 @@ Always save a copy as `.rbxlx` in Roblox Studio before attempting a non-Studio w
 
 Every Roblox `Instance` is a named, class-typed object that can have children. The model is tree-structured; Bevy flattens to ECS with `ChildOf` for hierarchy.
 
-| Roblox | Bevy 0.18 |
+| Roblox | Bevy 0.19 |
 |---|---|
 | `Workspace` (root container) | root `Entity`; no direct equivalent — just spawn into the world |
 | `Part` (box/sphere/cylinder primitive) | `Mesh3d` + `MeshMaterial3d<StandardMaterial>` + matching primitive mesh |
@@ -62,21 +62,21 @@ python3 rbxlx_inventory.py place.rbxlx --asset-urls-only
 
 ## Lua → Rust
 
-| Roblox Lua/Luau | Bevy 0.18 |
+| Roblox Lua/Luau | Bevy 0.19 |
 |---|---|
 | `Instance.new("Part")` | `commands.spawn(...)` |
 | `:GetService("Workspace")` | `World` / `Query` system parameter |
 | `task.wait(0.5)` | `Timer` component or a system that checks `Time::elapsed` |
-| `script.Parent.Touched:Connect(fn)` | `On<E>` observer or `EventReader<CollisionEvent>` |
+| `script.Parent.Touched:Connect(fn)` | `On<E>` observer or `MessageReader<CollisionEvent>` |
 | `game.Players.LocalPlayer` | `Query<Entity, With<LocalPlayer>>` |
 | `RunService.Heartbeat:Connect(fn)` | `Update` system |
-| `RunService.RenderStepped:Connect(fn)` | `Update` system (render-side) |
+| `RunService.RenderStepped:Connect(fn)` | frame-driven `Update` presentation system; true GPU work uses render schedules |
 
 ```rust
 // Roblox: part.Touched:Connect(function(other) takeDamage(other) end)
 // Bevy (with bevy_rapier3d):
 fn handle_collision(
-    mut collision_events: EventReader<CollisionEvent>,
+    mut collision_events: MessageReader<CollisionEvent>,
     mut health_query: Query<&mut Health>,
 ) {
     for event in collision_events.read() {
@@ -109,7 +109,7 @@ Roblox `ScreenGui` → `Frame` → `TextLabel`/`ImageLabel`/`TextButton` hierarc
 commands.spawn((
     Node { width: Val::Px(200.0), height: Val::Px(40.0), ..default() },
     Text::new("Score: 0"),
-    TextFont { font_size: 24.0, ..default() },
+    TextFont { font_size: FontSize::Px(24.0), ..default() },
 ));
 ```
 

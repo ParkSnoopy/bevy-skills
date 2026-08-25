@@ -1,4 +1,4 @@
-# Bevy 0.18 — Custom Material Reference
+# Bevy 0.19 — Custom Material Reference
 
 Writing a custom `Material` with `AsBindGroup`. See also
 [lighting](lighting.md) and [mesh-primitives](mesh-primitives.md).
@@ -7,7 +7,7 @@ Writing a custom `Material` with `AsBindGroup`. See also
 
 ## Complete Example: DissolveMaterial
 
-The following snippet is verified to compile against Bevy 0.18.
+The following snippet is verified to compile against Bevy 0.19.
 
 ```rust
 use bevy::asset::{Asset, AssetPath};
@@ -27,12 +27,12 @@ struct DissolveMaterial {
 }
 
 impl Material for DissolveMaterial {
-    // 0.18: shader paths via ShaderRef::Path or ShaderRef::Handle
+    // Bevy 0.19: shader paths via ShaderRef::Path or ShaderRef::Handle.
     fn fragment_shader() -> ShaderRef {
         ShaderRef::Path(AssetPath::from("shaders/dissolve.wgsl"))
     }
 
-    // 0.18: prepass/shadow config moved from plugin fields to trait methods.
+    // Prepass/shadow config lives on the Material trait, not MaterialPlugin fields.
     // Override only when you need to opt out — both default to true.
     fn enable_prepass() -> bool { false }
 }
@@ -126,7 +126,7 @@ struct MyMaterial {
 
     // Binding 1: a texture (2D by default).
     // Binding 2: its sampler.
-    // The pair must use consecutive indices.
+    // The indices must be unique and match the WGSL bindings.
     #[texture(1)]
     #[sampler(2)]
     noise: Handle<Image>,
@@ -138,15 +138,15 @@ struct MyMaterial {
 }
 ```
 
-**Binding index convention:** Start at 0. Bindings 0–N are your material bindings;
-the engine's own PBR bindings sit in a separate bind group so there is no conflict.
-Consecutive indices are not required, but gaps waste bind group entries.
+**Binding index convention:** Starting at 0 keeps layouts easy to audit. The engine's
+own PBR bindings sit in a separate bind group, so there is no conflict. Indices need
+not be consecutive, but every Rust attribute must agree with the WGSL declaration.
 
 ---
 
-## 0.18-Specific: AsBindGroup::label()
+## `AsBindGroup::label()`
 
-In 0.18, `AsBindGroup::label()` is **required** if you hand-roll the `impl AsBindGroup`.
+`AsBindGroup::label()` is required if you hand-roll the `impl AsBindGroup`.
 The `#[derive(AsBindGroup)]` macro generates it automatically from the type name:
 
 ```rust
@@ -176,7 +176,7 @@ impl AsBindGroup for MyMaterial {
   re-export `Material`. Import it as `use bevy::pbr::Material;`. If you see
   "multiple candidates" errors, qualify the path explicitly.
 
-- **`MaterialPlugin` field removal** — in 0.18, `MaterialPlugin::<M> { prepass_enabled, shadows_enabled, ..default() }` no longer compiles. Those fields moved to trait methods (`enable_prepass()`, `enable_shadows()`).
+- **`MaterialPlugin` field removal** — `MaterialPlugin::<M> { prepass_enabled, shadows_enabled, ..default() }` no longer compiles. Those fields moved to trait methods (`enable_prepass()`, `enable_shadows()`).
 
 - **`#[uniform(N)]` and `ShaderType`** — only types that implement `ShaderType`
   (from `bevy::render::render_resource`) can be used with `#[uniform]`. Primitives
@@ -187,7 +187,7 @@ impl AsBindGroup for MyMaterial {
   positions, also override `vertex_shader()` and mark `enable_prepass() -> false`
   to prevent the prepass from rendering with the wrong depth.
 
-- **Draw functions are per-phase in 0.18.** The old single `MaterialDrawFunction`
+- **Draw functions are per-phase.** The old single `MaterialDrawFunction`
   split into `MainPassOpaqueDrawFunction`, `MainPassAlphaMaskDrawFunction`,
   `MainPassTransparentDrawFunction`, and `PrepassOpaqueDrawFunction` /
   `PrepassAlphaMaskDrawFunction`. If you're registering a draw function manually

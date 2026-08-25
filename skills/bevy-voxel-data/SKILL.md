@@ -1,15 +1,15 @@
 ---
 name: bevy-voxel-data
-description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.18 voxel-data patterns — no game-specific data baked in.
+description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.19 voxel-data patterns — no game-specific data baked in.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: voxel
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Voxel data (RON, palette, KTX2 atlas)
+# Bevy 0.19 — Voxel data (RON, palette, KTX2 atlas)
 
 ## When to use this skill
 

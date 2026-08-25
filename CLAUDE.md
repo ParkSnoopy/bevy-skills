@@ -2,7 +2,7 @@
 
 ## What this repo is
 
-A collection of Agent Skills for **Bevy 0.18**. Each skill is a folder under `skills/<skill-name>/` containing `SKILL.md` (YAML frontmatter + markdown body) and optional `references/` for long-form deep dives.
+A collection of Agent Skills for **Bevy 0.19**. Each skill is a folder under `skills/<skill-name>/` containing `SKILL.md` (YAML frontmatter + markdown body) and optional `references/` for long-form deep dives.
 
 The skills target multiple consumers (Claude Code, OpenCode, Cursor, Codex). Conformance to **both** the [Anthropic Agent Skills spec](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/skills) and the [OpenCode Agent Skills spec](https://opencode.ai/docs/skills/) is mandatory.
 
@@ -12,19 +12,22 @@ The skills target multiple consumers (Claude Code, OpenCode, Cursor, Codex). Con
    ```yaml
    ---
    name: bevy-<area>           # ^[a-z0-9]+(-[a-z0-9]+)*$, 1–64 chars, equals directory name
-   description: <triggers>     # 1–1024 chars, must include "Bevy 0.18"
+   description: <triggers>     # 1–1024 chars, must include the target version
    license: MIT
    compatibility: opencode,claude-code,cursor
    metadata:
      tier: "1"                 # 1 (router/foundational), 2 (hot path), 3 (MMO), 4 (depth)
      area: <ecs|render|asset|net|...>
-     bevy_version: "0.18"
+     bevy_version: "0.19"        # current implementation target
    ---
    ```
 
-2. **Description writes triggers, not workflow.** Name ≥3 concrete API symbols or error symptoms. Agents trigger on this field — vague descriptions cause silent non-loading. Bad: "Helps with ECS components." Good: "Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, or hitting `ComponentHooks::on_add` in Bevy 0.18."
+2. **Description writes triggers, not workflow.** Name ≥3 concrete API symbols or error symptoms. Agents trigger on this field — vague descriptions cause silent non-loading. Bad: "Helps with ECS components." Good: "Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, or hitting `ComponentHooks::on_add` in Bevy 0.19."
 
-3. **Version-pinned, always.** Every skill body opens with a "Bevy 0.18" heading. Every API is version-honest. If an API changed in 0.18, say so in the Gotchas section.
+3. **Version-pinned, always.** Every current implementation skill body opens with
+   a "Bevy 0.19" heading. Historical migration skills instead name both source
+   and target and set `metadata.target_version` for the linter. Every API is
+   version-honest. If an API changed in 0.19, say so in the Gotchas section.
 
 4. **Code first, prose last.** Open the body with a working, copy-pasteable snippet. Prose explains the snippet, not the other way around.
 
@@ -36,14 +39,14 @@ The skills target multiple consumers (Claude Code, OpenCode, Cursor, Codex). Con
 
 ## Workflow for adding or editing a skill
 
-1. **Verify APIs.** Run `cargo doc --open` against `bevy = "0.18"` in the `bevy-skills-tester` crate (a separate sibling repo, see below) or browse https://docs.rs/bevy/0.18 . Do not trust your training data — Bevy moves fast.
+1. **Verify APIs.** Run `cargo doc --open` against `bevy = "0.19"` in the `bevy-skills-tester` crate (a separate sibling repo, see below) or browse <https://docs.rs/bevy/0.19.1>. Do not trust your training data — Bevy moves fast.
 
 2. **Write the snippet first.** Mirror it to `bevy-skills-tester/examples/<skill_name>.rs` (hyphens → underscores). Run `cargo check --example <skill_name>` until clean.
 
 3. **Write the `SKILL.md` body around the snippet.** Sections in this order:
    - `## When to use this skill` — bullet list of triggering situations and symptoms.
    - `## Canonical pattern` — the code block.
-   - `## Gotchas` — version-specific traps, 0.17→0.18 changes, common LLM mistakes from stale training data.
+   - `## Gotchas` — version-specific traps, 0.18→0.19 changes, common LLM mistakes from stale training data.
    - `## See also` — sibling skills and `references/` entries.
 
 4. **Lint the frontmatter.** Run `scripts/lint-skills.py` (or `python3 scripts/lint-skills.py skills/<skill>/SKILL.md`). CI runs this on every PR.
@@ -60,19 +63,27 @@ If you don't have the tester crate locally, clone it from <https://github.com/ch
 
 A good description names APIs Claude would search for and symptoms Claude would encounter. Examples from this collection:
 
-> "Use when defining `Component`s, using `#[require(...)]` for required components, registering `on_add`/`on_remove` hooks, or choosing between `#[component(storage = \"Table\")]` and `\"SparseSet\"` in Bevy 0.18."
+> "Use when defining `Component`s, using `#[require(...)]` for required components, registering `on_add`/`on_remove` hooks, or choosing between `#[component(storage = \"Table\")]` and `\"SparseSet\"` in Bevy 0.19."
 
-> "Use when writing a custom `AssetLoader`, depending on other assets via `LoadContext::load`, or handling async asset loading for `.gltf`, `.ron`, or custom binary formats in Bevy 0.18."
+> "Use when writing a custom `AssetLoader`, depending on other assets via `LoadContext::load`, or handling async asset loading for `.gltf`, `.ron`, or custom binary formats in Bevy 0.19."
 
 The description is the product. The body is a fallback for when the description matched.
 
 ## Quality gate — every PR must pass
 
 1. `python3 scripts/lint-skills.py` clean (frontmatter valid).
-2. For any new or changed code block: matching `bevy-skills-tester/examples/<skill>.rs` compiles under `bevy = "0.18"`.
+2. For any new or changed code block: matching `bevy-skills-tester/examples/<skill>.rs` compiles under `bevy = "0.19"`.
 3. Skill body ≤200 lines; longer content moved to `references/`.
-4. Description contains "Bevy 0.18" verbatim and names ≥3 concrete triggers.
+4. Description contains its target version verbatim (`Bevy 0.19` for current
+   skills) and names ≥3 concrete triggers.
 5. `## See also` lists ≥2 sibling skills.
+
+## Persistent task tracking
+
+- Use `dex` for multi-step work: `dex list --ready`, `dex show <id> --full`, then `dex start <id>`.
+- Write ticket-quality descriptions with context, approach, and explicit done criteria. Never put ephemeral Dex task IDs in commits, docs, or PR text.
+- `.dex/config.toml` stores tasks in the repository and enables GitHub sync on every mutation. Dex uses `GITHUB_TOKEN` when set and otherwise the authenticated `gh` CLI.
+- Complete a task only after verification, recording concrete evidence with `dex complete <id> --result "..." --commit <sha>` (or `--no-commit` only for genuinely non-code work).
 
 ## Maintenance cadence
 

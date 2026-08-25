@@ -1,6 +1,6 @@
-# Bevy 0.18 UI — Color Palettes
+# Bevy 0.19 UI — Color Palettes
 
-Bevy 0.18 ships three pre-defined color palettes under `bevy::color::palettes`.
+Bevy 0.19 ships three pre-defined color palettes under `bevy::color::palettes`.
 Import the module you need and use the constants directly — no hex strings required.
 
 ## Quick reference
@@ -79,7 +79,7 @@ fn branded_button() -> impl Bundle {
 
 ## Pitfalls
 
-- **`Srgba` vs `Color`.** Palette constants are `Srgba` (the linear-sRGB newtype),
+- **`Srgba` vs `Color`.** Palette constants are `Srgba` (gamma-encoded sRGB),
   not `Color`. Use `.into()` or wrap with `Color::Srgba(...)` when the API
   requires `Color` rather than `impl Into<Color>`.
 

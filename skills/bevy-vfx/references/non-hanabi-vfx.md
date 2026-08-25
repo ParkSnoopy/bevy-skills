@@ -9,7 +9,7 @@ particles. Reach for the alternatives below when:
 
 - **Count < ~100 particles** — spawning individual `Sprite` entities and driving them
   with a Bevy system is simpler, debuggable, and zero dependency overhead.
-- **WebGL2 target** — `bevy_hanabi 0.18.0` requires WebGPU. It will not compile or
+- **WebGL2 target** — `bevy_hanabi 0.19.0` requires WebGPU. It will not compile or
   run on `wasm32` with the `webgl2` feature. Use sprite flipbooks or custom-material
   shaders instead.
 - **Canned, identical-every-time FX** — hit-sparks, muzzle flashes, explosions where
@@ -21,8 +21,8 @@ particles. Reach for the alternatives below when:
 ## CPU-particle pattern
 
 For small bursts (smoke puffs, blood splatter, debris), spawn entities directly.
-Cost: O(particle count) CPU, one draw call per particle (batching helps if all use the
-same material and mesh).
+Main-world simulation, extraction, and render preparation scale with entity count.
+Compatible sprites can batch, while texture/material changes split batches.
 
 ```rust
 use bevy::prelude::*;
@@ -55,7 +55,7 @@ fn tick_particles(
 ) {
     for (entity, mut xf, mut p) in &mut q {
         p.lifetime.tick(time.delta());
-        if p.lifetime.finished() {
+        if p.lifetime.is_finished() {
             commands.entity(entity).despawn();
         } else {
             xf.translation += p.velocity * time.delta_secs();
@@ -65,37 +65,70 @@ fn tick_particles(
 }
 ```
 
-Fine up to a few hundred particles. Past that, draw-call overhead dominates — switch
-to hanabi or collapse into a single `Mesh2d` with a custom material.
+Benchmark the target scene and hardware. As entity count or batch fragmentation grows,
+switch to Hanabi or collapse the effect into a single `Mesh2d` with a custom material.
 
-## Sprite-sheet flipbooks — `bevy_spritesheet_animation 6.1.0`
+## Sprite-sheet flipbooks — `bevy_spritesheet_animation 7.0.1`
 
-`bevy_spritesheet_animation` (pins `bevy = "0.18"`) drives `TextureAtlas` index
-sequences from an animation library. Best fit: every instance plays the same frames
-in order — explosions, hit-sparks, muzzle flashes.
+`bevy_spritesheet_animation` (depends on `bevy = "0.19"`) drives `TextureAtlas`
+index sequences stored as Bevy animation assets. Best fit: repeatable frame sequences
+such as explosions, hit-sparks, and muzzle flashes.
 
 ```toml
 [dependencies]
-bevy = "0.18"
-bevy_spritesheet_animation = "6.1.0"
+bevy = "0.19"
+bevy_spritesheet_animation = "7.0.1"
 ```
 
-Key types: `SpritesheetAnimationPlugin`, `AnimationLibrary`, `SpritesheetAnimation`,
-`AnimationId`. Define clips once in `AnimationLibrary`, attach `SpritesheetAnimation`
-to the `Sprite` + `TextureAtlas` entity, and let the plugin drive the atlas index.
+Key types: `SpritesheetAnimationPlugin`, `Spritesheet`, `Animation`,
+`AnimationDuration`, and `SpritesheetAnimation`. Build each sequence once from a
+`Spritesheet`, register it in `Assets<Animation>`, and give each animated entity a
+`SpritesheetAnimation` holding the asset handle:
 
-What it does NOT do: individual particle physics. Every spawned entity plays the same
-frame sequence — there is no per-instance velocity or simulation.
+```rust
+use bevy::prelude::*;
+use bevy_spritesheet_animation::prelude::*;
 
-## Vector / SDF shapes — `bevy_vector_shapes 0.12.0`
+fn setup_flipbook(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut animations: ResMut<Assets<Animation>>,
+    mut atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let image = assets.load("textures/explosion.png");
+    let spritesheet = Spritesheet::new(&image, 8, 8);
+    let animation = spritesheet
+        .create_animation()
+        .add_row(0)
+        .set_duration(AnimationDuration::PerFrame(50))
+        .build();
+    let animation = animations.add(animation);
 
-`bevy_vector_shapes` (pins `bevy = "0.18.0"`) renders GPU-accelerated circles, lines,
+    commands.spawn((
+        spritesheet
+            .with_size_hint(1024, 1024)
+            .sprite(&mut atlas_layouts),
+        SpritesheetAnimation::new(animation),
+    ));
+}
+```
+
+Add `SpritesheetAnimationPlugin` to the app. Store handles in a custom resource when
+several systems need to spawn the same effect; do not rebuild identical assets per
+instance.
+
+What it does NOT do: individual particle physics. The asset describes a frame
+sequence; add separate components and systems for per-instance velocity or simulation.
+
+## Vector / SDF shapes — `bevy_vector_shapes 0.13.1`
+
+`bevy_vector_shapes` (targets Bevy 0.19) renders GPU-accelerated circles, lines,
 arcs, and polygons with SDF anti-aliasing.
 
 ```toml
 [dependencies]
-bevy = "0.18"
-bevy_vector_shapes = "0.12.0"
+bevy = "0.19"
+bevy_vector_shapes = "0.13.1"
 ```
 
 Key types: `Shape2dPlugin`, `ShapePainter`. Call `painter.circle(radius)`,
@@ -105,13 +138,15 @@ batches them into draw calls automatically.
 Good for: stylized SFX — shockwave rings, lightning bolts, lock-on reticles, force
 fields. The look is crisp and geometric rather than textured.
 
-> **`bevy_prototype_lyon` is abandoned for Bevy 0.18.** The latest published release
-> pins Bevy 0.17. Do not add it to a 0.18 project — it will not compile.
-> `bevy_vector_shapes` is the maintained replacement for 0.18.
+> **`bevy_prototype_lyon` is abandoned for Bevy 0.19.** The latest published release
+> has not published a Bevy 0.19-compatible release. Do not add it without first
+> checking its current dependency metadata. `bevy_vector_shapes` is the maintained
+> choice used by this skill.
 
 ## Trails
 
-No 0.18-ready trail crate exists. Two viable approaches:
+Do not assume a third-party trail crate is Bevy 0.19-compatible. Two durable
+engine-level approaches are:
 
 - **`LineList` mesh history** — maintain a ring buffer of the trailing entity's recent
   world positions; rebuild a `LineList` or `TriangleStrip` `Mesh` each frame (or every
@@ -123,7 +158,7 @@ Both approaches are hand-rolled; choose based on how much visual polish the trai
 
 ## Decals
 
-No dedicated decal crate targets Bevy 0.18. The hand-roll approach:
+No dedicated decal crate targets Bevy 0.19. The hand-roll approach:
 
 1. Spawn a thin quad slightly offset from receiver geometry (or use a `DepthBiasState`).
 2. Assign a custom `Material` with `AlphaMode::Blend` (or `Premultiplied`) and a

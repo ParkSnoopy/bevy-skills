@@ -25,7 +25,7 @@ fallback_language = "en"
 assets_dir = "assets/locales"
 ```
 
-No other top-level keys are defined in `es-fluent-manager-bevy 0.18.x`.
+No other top-level keys are defined in `es-fluent-manager-bevy 0.19.2`.
 
 ---
 

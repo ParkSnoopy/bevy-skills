@@ -7,7 +7,7 @@
 | Technique | Primary cost centre | Secondary cost | Scales with |
 |---|---|---|---|
 | `bevy_hanabi` GPU particles | Compute dispatch (init + update) | Fragment overdraw (large quads) | Particle count × modifier complexity |
-| Gaussian splats (`bevy_spark`) | GPU memory (upload) + sort compute | Fill-rate / overdraw | Splat count (millions) |
+| Gaussian splats (`bevy_gaussian_splatting`) | GPU memory + sorting | Fill-rate / overdraw | Splat count (millions) |
 | Custom material shader | Fragment shader invocations | Uniform upload (1 per entity/frame) | Screen pixels covered |
 | CPU / sprite particles | Draw-call overhead | Transform update (CPU) | Entity count (hundreds ceiling) |
 
@@ -16,23 +16,25 @@ particle count or quad screen-area are the highest-impact optimisations.
 
 ## The WASM / WebGPU caveat (most important)
 
-Both `bevy_hanabi 0.18.0` and `bevy_spark 0.2.0` use **compute shaders** internally.
-Compute shaders are WebGPU-only. They will not compile with Bevy's `webgl2` feature.
+`bevy_hanabi 0.19.0` uses compute shaders internally. Compute shaders are WebGPU-only,
+so Hanabi will not compile with Bevy's `webgl2` feature.
 
 Build for WebGPU, not WebGL2, when your project uses either crate:
 
 ```toml
-# Cargo.toml — correct WASM target for hanabi or bevy_spark
+# Cargo.toml — correct WASM target for Hanabi
 [dependencies]
-bevy = { version = "0.18", features = ["webgpu"] }
+bevy = { version = "0.19", features = ["webgpu"] }
 # NOT: features = ["webgl2"]
 ```
 
-Techniques that **do** work on WebGL2:
+Techniques that can work on WebGL2:
 - Sprite-sheet flipbooks (`bevy_spritesheet_animation`)
 - Custom material shaders that use only uniforms and texture sampling
 - `bevy_vector_shapes` (uses standard rasterisation)
 - CPU-particle sprite entities
+- `bevy_gaussian_splatting 8` through its deprecated WebGL2 feature path; test it on
+  every supported browser/GPU combination
 
 Cross-reference `bevy-wasm-webgpu` for the full WASM build setup.
 
@@ -57,7 +59,7 @@ cargo run --features bevy/trace
 Look for these spans:
 - `hanabi::simulate` — CPU portion of hanabi (spawner bookkeeping, not GPU compute).
 - `hanabi::extract` — copies effect metadata to the render world each frame.
-- `spark::sort` — per-frame depth sort for Gaussian splats (GPU compute).
+- the Gaussian renderer's sort systems — per-frame depth sorting for splats.
 
 GPU compute timings are only visible in RenderDoc / WGPU's GPU profiler; they do not
 appear in Bevy's CPU span output.
@@ -103,7 +105,7 @@ Particle **quad size** multiplies cost: a 1 M-particle effect where each quad co
 
 ## Combining techniques: sort and blend order
 
-When `bevy_hanabi` effects, `bevy_spark` splats, and transparent mesh materials all
+When `bevy_hanabi` effects, Gaussian splats, and transparent mesh materials all
 appear in the same frame, they all write to the transparent render pass. That pass
 serialises draw calls by depth sort order.
 
@@ -127,5 +129,5 @@ Mitigations:
   draw-call ceiling
 - [`gaussian-splats.md`](gaussian-splats.md) — splat GPU memory and sort-backend
   options
-- `bevy-wasm-webgpu` — WebGPU-only compute shader requirement for hanabi and bevy_spark
+- `bevy-wasm-webgpu` — WebGPU requirement for Hanabi and browser backend selection
 - `bevy-pbr-materials` — `AlphaMode` options to reduce transparent-pass pressure

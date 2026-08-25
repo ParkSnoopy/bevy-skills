@@ -1,25 +1,24 @@
 ---
 name: bevy-wasm-webgpu
-description: Use when targeting `wasm32-unknown-unknown`, picking between the `webgl2` and `webgpu` Bevy features, configuring `wasm-bindgen` glue, sizing down the bundle via `default-features = false`, or hitting "asset 404" errors caused by relative path handling in the browser. Covers Bevy 0.18 WASM build pipeline.
+description: Use when targeting Bevy 0.19 at `wasm32-unknown-unknown`, choosing the `webgl2` or `webgpu` feature, generating browser glue with `wasm-bindgen`, using a `wasm-release` profile, or debugging canvas startup and asset HTTP 404s.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: platform
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — WASM + WebGPU
+# Bevy 0.19 — browser WASM
 
 ## When to use this skill
 
-- Targeting `wasm32-unknown-unknown` for browser delivery.
-- Choosing the WebGL2 default vs the more capable WebGPU.
-- Trimming the bundle from 30 MB down to 5–10 MB.
-- Configuring asset paths so the browser actually finds your `assets/` folder.
-- Debugging "context lost" or "no canvas found" errors at startup.
+- Build a Bevy client for `wasm32-unknown-unknown`.
+- Choose the broadly compatible WebGL2 path or WebGPU path.
+- Generate JS bindings, serve assets, and reduce artifact size.
+- Diagnose missing canvas, insecure-context, codec, or asset-path failures.
 
-## Canonical Cargo.toml
+## Canonical manifest
 
 ```toml
 [package]
@@ -28,105 +27,122 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.18", default-features = false, features = [
-    # Bring just the renderer + window plumbing.
-    "3d_api",
-    "bevy_winit",
-    # Pick one or both backends. WebGL2 has best browser coverage today;
-    # WebGPU is faster and supports compute shaders but is still gated on
-    # current Chrome / Firefox / Safari versions.
-    "webgl2",
-    # "webgpu",
-    # Input — input is NOT in default-features = false anymore in 0.18.
-    "mouse",
-    "keyboard",
+bevy = { version = "0.19", default-features = false, features = [
+    "3d",
+    "ui",
     "touch",
-    "gestures",
 ] }
 
-[profile.release]
-opt-level = "z"      # size, not speed — WASM is bandwidth-bound, not CPU-bound
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
 lto = "fat"
 codegen-units = 1
 strip = "debuginfo"
-panic = "abort"
 ```
 
-## Build & serve
+The `3d` profile supplies Bevy's renderer, Winit, and the default WebGL2 path.
+Add `audio` only if needed; browser audio must begin after user interaction.
+
+## Build and serve
 
 ```bash
-# 1. Build the WASM binary.
-cargo build --release --target wasm32-unknown-unknown
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli
 
-# 2. Bind it for the browser.
-wasm-bindgen --target web --out-dir public/ \
-    target/wasm32-unknown-unknown/release/myclient.wasm
+cargo build --profile wasm-release --target wasm32-unknown-unknown
+wasm-bindgen --target web --out-name myclient --out-dir public \
+  target/wasm32-unknown-unknown/wasm-release/myclient.wasm
 
-# 3. (Optional but big win) shrink with wasm-opt.
-wasm-opt -Oz public/myclient_bg.wasm -o public/myclient_bg.wasm
+# Optional: install Binaryen first, then verify this actually reduces size.
+wasm-opt -Oz public/myclient_bg.wasm -o public/myclient_bg.opt.wasm
+mv public/myclient_bg.opt.wasm public/myclient_bg.wasm
 
-# 4. Serve. Must serve `assets/` next to `myclient.js` / `myclient_bg.wasm`.
-#    Bevy looks for `./assets/...` relative to the page URL.
-python3 -m http.server -d public/ 8080
+python3 -m http.server --directory public 8080
 ```
 
-## Picking a backend
+Copy or link the project `assets/` directory to `public/assets/`; Bevy fetches
+assets over HTTP relative to the served page/asset root.
+
+## Minimal HTML
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>My Bevy game</title>
+    <style>html,body,#bevy{width:100%;height:100%;margin:0;background:#000}</style>
+  </head>
+  <body>
+    <canvas id="bevy"></canvas>
+    <script type="module">
+      import init from "./myclient.js";
+      await init();
+    </script>
+  </body>
+</html>
+```
+
+Bind the primary window to that existing canvas. Otherwise `Window::default()` has
+`canvas: None`, so Bevy/Winit creates and appends a second canvas:
 
 ```rust
-// At runtime, force a backend by setting `WgpuSettings.backends` before
-// `DefaultPlugins`. By default Bevy picks the best available.
-use bevy::prelude::*;
-use bevy::render::settings::{Backends, WgpuSettings};
-use bevy::render::RenderPlugin;
+use bevy::{prelude::*, window::WindowPlugin};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(RenderPlugin {
-            render_creation: WgpuSettings {
-                backends: Some(Backends::GL),     // WebGL2
-                // backends: Some(Backends::BROWSER_WEBGPU), // WebGPU
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                canvas: Some("#bevy".into()),
+                fit_canvas_to_parent: true,
                 ..default()
-            }
-            .into(),
+            }),
             ..default()
         }))
         .run();
 }
 ```
 
-## Minimal `index.html`
+Serve over HTTP; opening the file directly does not provide the fetch and module
+semantics the generated glue expects.
 
-```html
-<!doctype html>
-<html lang="en">
-  <head><meta charset="utf-8"><title>myclient</title></head>
-  <body style="margin:0;background:#000">
-    <canvas id="bevy"></canvas>
-    <script type="module">
-      import init from "./myclient.js";
-      // Bevy auto-finds <canvas id="bevy"> if present.
-      init();
-    </script>
-  </body>
-</html>
-```
+## WebGL2 versus WebGPU
+
+| Choice | Cargo features | Choose when |
+|---|---|---|
+| WebGL2 | profile defaults / `webgl2` | Browser reach matters; no compute dependency |
+| WebGPU | add `webgpu` | A tested target browser supports it and effects need compute |
+
+In Bevy 0.19, `webgpu` overrides `webgl2`. One binary cannot dynamically fall
+back between them. Produce two artifacts or choose one based on the supported
+browser matrix. Check current browser support during release testing rather
+than hard-coding browser-version claims in application logic.
 
 ## Gotchas
 
-- **`default-features = true` for WASM = 30 MB+ bundle.** Always pass `default-features = false` and pick features explicitly. This is the single biggest size lever.
-- **Backend coverage 2026:** WebGPU is on by default in Chrome and Edge, behind a flag in Firefox and Safari (improving). Ship both if you care about reach — Bevy picks WebGPU when present, falls back to WebGL2 otherwise.
-- **Compute shaders need WebGPU.** WebGL2 has none. If your renderer plugin requires compute, you must build with the `webgpu` feature and accept the smaller addressable browser pool.
-- **Assets are served, not bundled.** `assets/` must sit next to your HTML at the served URL root. There is no built-in embed-in-WASM mode without a custom asset source.
-- **`wasm-pack` vs `wasm-bindgen` CLI.** `wasm-pack` adds an npm-style wrapper. For raw `<script type="module">` delivery, `wasm-bindgen --target web` is leaner.
-- **Coop/Coep headers** are required for `SharedArrayBuffer`, which Bevy's threadpool needs for `multi_threaded`. Without them you'll be single-threaded in the browser. Configure your server: `Cross-Origin-Opener-Policy: same-origin` + `Cross-Origin-Embedder-Policy: require-corp`.
-- **No `std::time::Instant` in WASM.** Bevy's `Time` works, but if you use raw `std::time::Instant` in a system it panics. Use `bevy::time::Instant` or wrap behind `#[cfg(target_arch = "wasm32")]`.
-- **`println!` lands in the JS console** as a generic log line. Use the `tracing` machinery (`info!`/`warn!`) for structured browser-devtools output.
-
-## Source-confirmed scope
-
-This skill covers the parts of the WASM workflow that are uncontroversial and stable in 0.18. The Bevy 0.18 release notes did not call out WASM-specific renderer changes; the migration story is mostly the same Cargo-features rename as for native (`animation` → `gltf_animation`, etc. — see `bevy-cargo-features`).
+- `3d_api` only supplies types; it does not render. Use `3d` or compose
+  `3d_bevy_render` with the app/platform collections.
+- `default-features = false` matters. Cargo features are additive; adding `3d`
+  without disabling defaults keeps the full default set.
+- WebGL2 has no compute shaders. Hanabi and other compute-heavy plugins require
+  the WebGPU artifact and their own current Bevy-compatible release.
+- Browser filesystems and child processes are not native capabilities. Capture,
+  save, and export flows need explicit web APIs/JS interop.
+- Audio playback is normally blocked until a user gesture resumes the browser
+  audio context.
+- Asset 404s are deployment-layout errors: inspect the requested URL in browser
+  devtools and make the served `assets/` tree match it.
+- A configured `Window.canvas` selector must resolve before startup and cannot be
+  changed later. If you omit it, remove any placeholder canvas and let Bevy append
+  its own.
+- Test on actual target browsers and GPUs. `cargo check` cannot validate adapter
+  limits, shader translation, texture formats, or browser security policy.
 
 ## See also
 
-- `bevy-cargo-features` — the feature collection table you need for trimmed WASM builds.
-- `bevy-assets` — asset loading rules apply identically to WASM, with the file-source caveat above.
+- [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md) — profile composition.
+- [`bevy-rendering`](../bevy-rendering/SKILL.md) — renderer extension choices.
+- [`bevy-assets`](../bevy-assets/SKILL.md) — asynchronous asset loading.
+- [`bevy-vfx`](../bevy-vfx/SKILL.md) — compute-dependent effects.

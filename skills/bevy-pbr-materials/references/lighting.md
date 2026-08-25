@@ -1,4 +1,4 @@
-# Bevy 0.18 — Lighting Reference
+# Bevy 0.19 — Lighting Reference
 
 Deep dive on light components and resources. See also
 [mesh-primitives](mesh-primitives.md) and [custom-material](custom-material.md).
@@ -19,15 +19,16 @@ commands.spawn((
         color: Color::WHITE,
         // lux (lumens/m²). Default = light_consts::lux::AMBIENT_DAYLIGHT = 10_000.0
         illuminance: 10_000.0,
-        shadows_enabled: true,
-        // bias tuning — raise shadow_depth_bias to fix "shadow acne",
-        // raise shadow_normal_bias to fix "peter-panning"
+        shadow_maps_enabled: true,
+        contact_shadows_enabled: true,
+        // Bias tuning: raising either bias can reduce shadow acne, but values
+        // that are too high detach shadows from casters ("peter-panning").
         shadow_depth_bias: 0.02,   // default
         shadow_normal_bias: 1.8,   // default
         ..default()
     },
     // looking_at sets the rotation; the position is irrelevant for directional lights
-    Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
+    Transform::from_xyz(2.0, 10.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
     // Override cascade config on the same entity (auto-required by DirectionalLight)
     CascadeShadowConfigBuilder {
         num_cascades: 4,
@@ -44,7 +45,8 @@ you can override it in the bundle.
 **Default values:**
 - `color`: `Color::WHITE`
 - `illuminance`: `10_000.0` lux
-- `shadows_enabled`: `false`
+- `shadow_maps_enabled`: `false`
+- `contact_shadows_enabled`: `false`
 - `shadow_depth_bias`: `0.02`
 - `shadow_normal_bias`: `1.8`
 
@@ -63,9 +65,10 @@ commands.spawn((
         intensity: 800.0,
         // meters — tune together with intensity to avoid hard cut-offs
         range: 20.0,
-        // sphere radius for specular highlight size (not shadow softness)
+        // sphere radius for specular size and, with PCSS enabled, shadow penumbra
         radius: 0.0,
-        shadows_enabled: true,
+        shadow_maps_enabled: true,
+        contact_shadows_enabled: true,
         shadow_depth_bias: 0.08,   // default
         shadow_normal_bias: 0.6,   // default
         shadow_map_near_z: 0.1,    // default — raise for better depth precision
@@ -75,7 +78,7 @@ commands.spawn((
 ));
 ```
 
-The `3d_scene` rebuild only needed `shadows_enabled: true` — the intensity/range
+The `3d_scene` example only needs `shadow_maps_enabled: true` — the intensity/range
 defaults are intentionally very large so lights are visible at Bevy's default
 "very overcast day" exposure. For indoor lighting lower the intensity or
 tune the camera's exposure/tonemapping.
@@ -84,7 +87,8 @@ tune the camera's exposure/tonemapping.
 - `intensity`: `1_000_000.0` lumens
 - `range`: `20.0` m
 - `radius`: `0.0`
-- `shadows_enabled`: `false`
+- `shadow_maps_enabled`: `false`
+- `contact_shadows_enabled`: `false`
 
 ---
 
@@ -100,7 +104,8 @@ commands.spawn((
         intensity: 1_000_000.0,   // lumens, same as PointLight default
         range: 20.0,
         radius: 0.0,
-        shadows_enabled: false,
+        shadow_maps_enabled: false,
+        contact_shadows_enabled: false,
         shadow_depth_bias: 0.02,
         shadow_normal_bias: 1.8,
         shadow_map_near_z: 0.1,
@@ -152,9 +157,9 @@ fn setup_ambient(mut ambient: ResMut<GlobalAmbientLight>) {
 
 ---
 
-## AmbientLight (per-camera component, 0.18 change)
+## AmbientLight (per-camera component)
 
-New in 0.18: attach `AmbientLight` directly to a camera entity to override
+Attach `AmbientLight` directly to a camera entity to override
 `GlobalAmbientLight` for that camera only. This is a component, not a resource.
 
 ```rust
@@ -205,9 +210,59 @@ app.insert_resource(PointLightShadowMap { size: 2048 }); // default 1024
 
 ```rust
 // SpotLight does NOT use PointLightShadowMap. It shares the directional-light
-// shadow map (verified at bevy_light-0.18.1/src/spot_light.rs:21).
+// shadow map rather than PointLightShadowMap.
 app.insert_resource(DirectionalLightShadowMap { size: 4096 }); // default 2048
 ```
+
+## Contact shadows
+
+Contact shadows are a Bevy 0.19 screen-space technique for small gaps that shadow
+maps miss. Enable the camera pass and opt each light in independently:
+
+```rust
+use bevy::pbr::ContactShadows;
+
+commands.spawn((
+    Camera3d::default(),
+    ContactShadows::default(), // also requires the depth prepass
+));
+
+commands.spawn(DirectionalLight {
+    shadow_maps_enabled: true,
+    contact_shadows_enabled: true,
+    ..default()
+});
+```
+
+`ContactShadows` controls ray length, surface thickness, and step count. It is a
+view-local post effect: it can miss off-screen occluders and benefits from temporal
+anti-aliasing. Use it for detail, not as a replacement for world-scale shadow maps.
+
+## Atmosphere
+
+In Bevy 0.19, `Atmosphere` belongs to `bevy::light` and is spawned as a world entity.
+`AtmosphereSettings` remains on each camera that renders it:
+
+```rust
+use bevy::{
+    light::{atmosphere::ScatteringMedium, Atmosphere},
+    pbr::AtmosphereSettings,
+    prelude::*,
+};
+
+fn setup_atmosphere(
+    mut commands: Commands,
+    mut media: ResMut<Assets<ScatteringMedium>>,
+) {
+    let earth = media.add(ScatteringMedium::earth(256, 256));
+    commands.spawn(Atmosphere::earth(earth));
+    commands.spawn((Camera3d::default(), AtmosphereSettings::default()));
+}
+```
+
+Scale the atmosphere entity to change scene-unit scale; the old
+`AtmosphereSettings::scene_units_to_m` field is gone. If several atmospheres exist,
+the nearest one is selected for a view.
 
 ---
 
@@ -222,8 +277,8 @@ app.insert_resource(DirectionalLightShadowMap { size: 4096 }); // default 2048
 - **Directional light position doesn't matter** — the `Transform` translation is
   ignored; only the rotation (forward direction) affects shading. Place it
   anywhere for convenience.
-- **Shadows are expensive** — each shadow-casting light multiplies rendering cost.
-  Keep shadow-casting lights to one or two. Disable `shadows_enabled` for fill
+- **Shadow maps are expensive** — each shadow-map light multiplies rendering cost.
+  Keep shadow-map lights to one or two. Disable `shadow_maps_enabled` for fill
   lights.
 - **`shadow_depth_bias` defaults differ by type** — `DirectionalLight` defaults
   to `0.02`, `PointLight` to `0.08`.

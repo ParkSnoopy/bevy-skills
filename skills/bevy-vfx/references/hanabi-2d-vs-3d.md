@@ -4,18 +4,19 @@
 
 ## Feature flags
 
-`bevy_hanabi = "0.18.0"` ships **six** Cargo features. Both `2d` and `3d` are enabled
+`bevy_hanabi = "0.19.0"` ships `2d`, `3d`, `gpu_tests`, and `trace` features. Both
+`2d` and `3d` are enabled
 by default:
 
 ```toml
 [dependencies]
-bevy_hanabi = "0.18.0"           # 2d + 3d both on (default)
+bevy_hanabi = "0.19.0"           # 2d + 3d both on (default)
 
 # 3D-only — saves compiling the 2D render path
-bevy_hanabi = { version = "0.18.0", default-features = false, features = ["3d"] }
+bevy_hanabi = { version = "0.19.0", default-features = false, features = ["3d"] }
 
 # 2D-only
-bevy_hanabi = { version = "0.18.0", default-features = false, features = ["2d"] }
+bevy_hanabi = { version = "0.19.0", default-features = false, features = ["2d"] }
 ```
 
 Other default features: `gpu_tests`, `serde`, `typetag`. The non-default feature is
@@ -66,7 +67,7 @@ let orient = OrientModifier {
 };
 ```
 
-`OrientMode` variants verified against `bevy_hanabi` 0.18.0 docs:
+`OrientMode` variants verified against `bevy_hanabi` 0.19.0 docs:
 
 | Variant | Local axes | Cost | Typical use |
 |---|---|---|---|
@@ -119,7 +120,7 @@ let tex_mod = ParticleTextureModifier::new(writer.lit(slot as f32).expr());
 ```
 
 Then bind the actual texture via `EffectMaterial` on the particle entity (see
-[docs.rs/bevy_hanabi/0.18.0](https://docs.rs/bevy_hanabi/0.18.0/bevy_hanabi/struct.EffectMaterial.html)).
+[docs.rs/bevy_hanabi/0.19.0](https://docs.rs/bevy_hanabi/0.19.0/bevy_hanabi/struct.EffectMaterial.html)).
 
 ## `ParticleTextureModifier` — static texture
 
@@ -137,7 +138,7 @@ color by the texture sample. Override it if you need alpha-only or full-replace 
 ## 3D mesh particles
 
 Hanabi's default particle is always a quad billboard. True instanced-mesh particles
-(each particle renders a 3D mesh) are not directly supported by `bevy_hanabi` 0.18.0 —
+(each particle renders a 3D mesh) are not directly supported by `bevy_hanabi` 0.19.0 —
 use Bevy's built-in `GpuPickable` / instanced rendering or `bevy_particle_systems` for
 that pattern. Mention it only to clarify scope; billboard particles cover the vast
 majority of VFX use cases.
@@ -145,8 +146,8 @@ majority of VFX use cases.
 ## Sprite-sheet alternative (non-hanabi)
 
 For sprite-flipbook explosions that are *not* GPU particle systems, see the
-`non-hanabi-vfx` reference (Author B's file) for the `bevy_spritesheet_animation`
-approach, which operates on ordinary `Sprite` entities.
+[`non-hanabi-vfx`](non-hanabi-vfx.md) reference for the
+`bevy_spritesheet_animation` approach, which operates on ordinary `Sprite` entities.
 
 ## See also
 

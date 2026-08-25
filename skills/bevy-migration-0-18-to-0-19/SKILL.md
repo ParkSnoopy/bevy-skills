@@ -1,6 +1,6 @@
 ---
 name: bevy-migration-0-18-to-0-19
-description: Use when upgrading from Bevy 0.18 to Bevy 0.19, when `TextLayout::new_with_justify` or `TextFont { font_size: 24.0, font: handle }` stops compiling (now `TextLayout::justify`, `FontSize::Px`, `FontSource`), when `bevy_scene`/`DynamicScene` serialization moved to `bevy_world_serialization` (`WorldAsset`/`DynamicWorld`), when a `#[derive(Resource)]` type now also matches `&T` component queries, or when `init_non_send_resource`/`FeathersPlugin`/`EasyScreenRecordPlugin` changed. Index of every breaking Bevy 0.19 change.
+description: Use when upgrading from Bevy 0.18 to Bevy 0.19, fixing resource/query conflicts, replacing `SceneRoot` with `WorldAssetRoot`, migrating text to `FontSource` and `FontSize`, converting render-graph nodes to render systems, replacing lifecycle `Replace` with `Discard`, or updating asset load builders, lights, input focus, and Cargo features.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -10,112 +10,139 @@ metadata:
   target_version: "Bevy 0.19"
 ---
 
-# Bevy 0.18 → 0.19 — Migration cheat sheet
+# Bevy 0.18 → 0.19 migration
 
-**Released 2026-06-18.** Apply top-down — earlier items break later builds if skipped.
+Bevy 0.19.0 was released on 2026-06-19. Target `bevy = "0.19"` and validate
+against the latest 0.19 patch release. Apply the official migration guide from top
+to bottom; this skill prioritizes changes most likely to affect game code and sibling
+skills.
 
-## When to use this skill
+## First-pass checklist
 
-- Compiler errors after a `bevy = "0.18"` → `bevy = "0.19"` bump.
-- LLM emits 0.18-era text/font/scene API names from training data.
-- A `#[derive(Resource)]` type suddenly behaves like a component.
-- A third-party crate (`bevy_capture`, etc.) hasn't shipped 0.19 yet.
+1. Update the engine and every Bevy ecosystem crate together. A crate built on Bevy
+   0.18 cannot share ECS/assets/render types with Bevy 0.19.
+2. Rebuild with the project's real `default-features` and target triples.
+3. Fix resources and broad-query conflicts before chasing secondary system errors.
+4. Update scenes, text, assets, rendering, lights, and UI focus.
+5. Regenerate persisted animation target IDs and serialized world data.
+6. Compile representative examples and exercise native and web/platform builds.
 
-## The renames you'll hit first
+## High-impact changes
 
-### Text layout: drop the `new_with_` prefix
+| Bevy 0.18 | Bevy 0.19 |
+|---|---|
+| `#[derive(Component, Resource)]` | Split into distinct types; `Resource: Component` |
+| broad query plus `Res<T>` | Filter resource entities with `Without<IsResource>` when appropriate |
+| `init_non_send_resource` | `init_non_send` |
+| `SceneRoot` / `DynamicScene` | `WorldAssetRoot` / `DynamicWorld` |
+| old world serialization in `bevy_scene` | `bevy_world_serialization` |
+| `TextFont { font: Handle<_>, font_size: f32 }` | `FontSource` and `FontSize` |
+| `TextLayout::new_with_justify` | `TextLayout::justify` |
+| `LoadContext::loader()` | `LoadContext::load_builder()` |
+| custom `Reader` with `AsyncSeekForward` | required `Reader::seekable()` |
+| `ViewNode` and camera render-graph nodes | systems in `Core2d` / `Core3d` schedules |
+| `Replace`, `on_replace` | `Discard`, `on_discard` |
+| `set_executor_kind(ExecutorKind::...)` | `set_executor(...)` with an executor instance |
+| light `shadows_enabled` | `shadow_maps_enabled` plus optional `contact_shadows_enabled` |
+| `Atmosphere` on a camera | separate `bevy::light::Atmosphere` entity |
+| public `InputFocus.0` | `get`, `set`, and `clear` methods |
+
+The render-node API is gone, but the top-level non-camera schedule named
+`bevy::render::renderer::RenderGraph` still exists. Do not replace that schedule name
+blindly.
+
+## Text and scenes
 
 ```rust
-// 0.19
-TextLayout::justify(Justify::Left)   // was new_with_justify
-TextLayout::linebreak(/* … */)       // was new_with_linebreak
-TextLayout::no_wrap()                // was new_with_no_wrap
-```
-
-### `TextFont` fields changed type: `FontSource` + `FontSize`
-
-```rust
-// 0.19 — font is FontSource (handle OR family), font_size is FontSize
 TextFont {
-    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(), // Handle → FontSource via .into()
-    font_size: FontSize::Px(24.0),                             // f32 → FontSize::Px / ::Vh / ::Rem
+    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(),
+    font_size: FontSize::Px(24.0),
     ..default()
 }
-// Select by family (needs the `bevy/system_font_discovery` feature for installed fonts):
-TextFont { font: FontSource::family("Fira Sans"), ..default() }
+
+commands.spawn(WorldAssetRoot(
+    asset_server.load("models/level.glb#Scene0"),
+));
 ```
 
-0.19 swapped the cosmic-text layout backend for **Parley**, which does font fallback
-automatically via `fontique`. The old "insert a `DefaultFontHandle` so `..default()`
-entities inherit a font" trick is obsolete — see [references/text-and-fonts.md](references/text-and-fonts.md).
+Parley/fontique now provide shaping and fallback. Installed-family discovery requires
+the `system_font_discovery` feature. The old serialization system was renamed to make
+room for BSN; glTF roots still use `WorldAssetRoot`, not BSN scene types.
 
-### Scene serialization crate was renamed (silent wrong-crate trap)
+See [text and fonts](references/text-and-fonts.md) and
+[scene serialization](references/scene-serialization.md).
 
-`bevy_scene` is **reused** for the new BSN system. Classic `DynamicScene` round-trip
-serialization moved to **`bevy_world_serialization`**:
+## Resources and generic queries
+
+`Res<T>` and `ResMut<T>` remain the normal APIs. The semantic change is that resource
+values live on singleton entities and `#[derive(Resource)]` also implements
+`Component`. As a result, broad component queries can conflict with resource access or
+unexpectedly include resource entities.
 
 ```rust
-// 0.18  → 0.19
-// bevy_scene::DynamicScene          → bevy_world_serialization::DynamicWorld
-// bevy::scene::SceneRoot            → bevy::world_serialization::WorldAssetRoot
-// DynamicSceneBuilder               → DynamicWorldBuilder
-// SceneSpawner                      → WorldInstanceSpawner
+fn inspect_entities(
+    entities: Query<EntityRef, Without<IsResource>>,
+    settings: Res<GameSettings>,
+) {
+    // ...
+}
 ```
 
-glTF scene spawning still uses the old (now `world_serialization`) system. Full table:
-[references/scene-serialization.md](references/scene-serialization.md).
+Do not add `Without<IsResource>` mechanically to every query; narrow only queries that
+are truly intended to inspect ordinary entities. See
+[resources as components](references/resources-as-components.md).
 
-### Resources are now Components (mostly a mental-model change)
-
-`Res<T>`, `ResMut<T>`, `#[derive(Resource)]`, and `insert_resource` **all still work.**
-The narrow breakages:
-
-```rust
-// ILLEGAL in 0.19 — a type can no longer be both:
-#[derive(Component, Resource)] struct Health(u32);
-```
-
-Plus: a resource type now also matches `Query<&T>`, and inserting it as a *component*
-can despawn other copies. Non-send resource methods were renamed (deprecated, not removed):
-
-```rust
-world.init_non_send::<T>();    // was init_non_send_resource
-world.get_non_send::<T>();     // was get_non_send_resource
-```
-
-Details + the query/despawn footgun: [references/resources-as-components.md](references/resources-as-components.md).
-
-## Cargo feature implications tightened
+## Features and ecosystem crates
 
 ```toml
-# 0.19: audio is NO LONGER implied by 2d / 3d / ui — add it explicitly:
-bevy = { version = "0.19", features = ["3d", "bevy_audio", "vorbis"] }
-# ui is NO LONGER implied by 2d / 3d either — add "ui" if you build UI.
+[dependencies]
+bevy = { version = "0.19", default-features = false, features = [
+  "3d", "ui", "audio"
+] }
 ```
 
-## Feathers UI stabilized
+- `audio` is no longer implied by `2d`, `3d`, or `ui`.
+- `ui` is no longer implied by `2d` or `3d`.
+- Profile collections must be used with `default-features = false`; otherwise default
+  features remain enabled by Cargo feature unification.
+- Native controller events need the `bevy_gilrs` backend when defaults are disabled.
+- `bevy_capture 0.6` and `bevy_hanabi 0.19` target Bevy 0.19. Verify every other
+  dependency's declared Bevy version rather than guessing from its crate version.
 
-`experimental_` dropped. `FeathersPlugin` → `FeathersCorePlugin`, and widget components
-lost their `Core` prefix (`CoreScrollbarThumb` → `ScrollbarThumb`,
-`CoreSliderDragState` → `SliderDragState`, etc.). Only relevant if you use Feathers.
+## Other source migrations
 
-## Third-party crates lag the release
+- `InputFocus` is initialized by `DefaultPlugins`. In Bevy 0.19.1, call
+  `focus.set(entity, FocusCause::Navigated)`; the one-argument 0.19.0 example is
+  patch-stale.
+- Recalculate serialized `AnimationTargetId` values: its hash/ID algorithm changed.
+- A glTF `#Material0` label now returns `GltfMaterial`; append `/std` for a
+  `Handle<StandardMaterial>` when PBR conversion is enabled.
+- Advanced loads now go through `AssetServer::load_builder`; nested loads use
+  `LoadContext::load_builder`.
+- `EasyScreenRecordPlugin` manual literals need `output_dir`; `..default()` already
+  supplies it.
+- `FeathersPlugin` became `FeathersCorePlugin`, while `FeathersPlugins` remains the
+  plugin group.
 
-`bevy_capture` (the crate behind `bevy-capture`) tracks Bevy and may not have a 0.19
-release yet — **verify a 0.19-compatible version exists before bumping.** When it does,
-`EasyScreenRecordPlugin` gained a required `output_dir: Option<PathBuf>` field
-(only breaks manual struct construction; `..default()` is fine).
+See [rendering, assets, and APIs](references/rendering-assets-and-api.md).
 
-## Gotchas
+## Validate the migration
 
-- **`#[reflect(Resource)]`** reflection access now also needs `ReflectComponent` in some paths.
-- **`TextFont::default().font` is a `FontSource`, not a `Handle<Font>`** — code that read it as a handle won't compile.
-- **System font discovery** needs the `bevy/system_font_discovery` feature; on Linux also `libfontconfig1-dev`.
-- The fallback setters (`set_serif_family`, etc.) now return `Result` — and you mostly shouldn't need them under Parley.
+```sh
+cargo check --all-targets
+cargo test
+cargo tree -d | rg 'bevy(_| )'
+```
+
+Treat duplicate Bevy majors/minors as a compatibility problem, not harmless Cargo
+noise. Also build every supported feature profile and target; a default desktop build
+does not validate `default-features = false` or WASM.
 
 ## See also
 
-- `bevy-migration-0-17-to-0-18` — the previous release's rename catalogue.
-- `bevy-ui` — `TextFont`/`FontSize`/`FontSource` in everyday UI code.
-- `bevy-cargo-features` — feature-implication table and renames.
-- `bevy-ecs-components` — the Component model the new Resource subtrait plugs into.
+- [Official Bevy migration guide](https://bevy.org/learn/migration-guides/0-18-to-0-19/)
+- [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md)
+- [`bevy-rendering`](../bevy-rendering/SKILL.md)
+- [`bevy-ui`](../bevy-ui/SKILL.md)
+- [`bevy-assets`](../bevy-assets/SKILL.md)
+- [`bevy-ecs-queries`](../bevy-ecs-queries/SKILL.md)

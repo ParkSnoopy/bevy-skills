@@ -1,132 +1,122 @@
 ---
 name: bevy-cargo-features
-description: Use when picking Bevy Cargo features for a project — high-level `2d`/`3d`/`ui`, mid-level `2d_api`/`3d_api`/`ui_api` for custom renderers, opting in to `mouse`/`keyboard`/`gamepad`/`touch`/`gestures` with `default-features = false`, or hitting renamed features (`gltf_animation`, `ui_picking`, `mesh_picking`, `reflect_documentation`). Critical for WASM client size in Bevy 0.18.
+description: Use when selecting Bevy 0.19 Cargo features such as `2d`/`3d`/`ui`/`audio`, composing `3d_bevy_render` or API-only `3d_api`, building headless with `default_app`, enabling `bevy_gilrs`, or debugging missing UI/audio/input after `default-features = false`.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: cargo
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Cargo features
+# Bevy 0.19 — Cargo features
 
 ## When to use this skill
 
-- Authoring or auditing a Bevy project's `Cargo.toml`.
-- Trimming the WASM bundle (the single biggest lever).
-- Building a headless server (no rendering, no windowing, no audio).
-- Writing a custom renderer that needs Bevy's data types but not its render pipeline.
-- Migrating from a 0.17 manifest — several features were renamed in 0.18.
+- Choose a supported application profile without enabling the full default set.
+- Compose a custom renderer or a headless server.
+- Enable native controller input, window/input APIs, or browser rendering.
+- Diagnose types/plugins missing after disabling default features.
 
-## Canonical patterns
+## Canonical profiles
 
-### High-level: pick one of the three "app shape" collections
+Bevy's default is `2d + 3d + ui + audio`. To select a profile, disabling
+defaults is essential:
 
 ```toml
-# 3D game (default for most projects)
-[dependencies]
-bevy = { version = "0.18", features = ["3d"] }
+# 3D game with Bevy UI, but no audio or 2D renderer
+bevy = { version = "0.19", default-features = false, features = ["3d", "ui"] }
 
-# 2D-only game
-[dependencies]
-bevy = { version = "0.18", features = ["2d"] }
-
-# UI-only tool (no scene rendering)
-[dependencies]
-bevy = { version = "0.18", features = ["ui"] }
+# 2D game with audio, but no 3D renderer or UI
+# bevy = { version = "0.19", default-features = false, features = ["2d", "audio"] }
 ```
 
-`2d`, `3d`, `ui` are the three top-level **feature collections** new in 0.18. They turn on a curated stack appropriate for that app shape. Use these instead of hand-picking 40 individual flags.
+Writing `features = ["3d"]` while leaving default features enabled does not
+trim anything: Cargo unions feature sets.
 
-### Mid-level: API without the default renderer
+## Collection layers
+
+| Layer | Features | Meaning |
+|---|---|---|
+| Profiles | `2d`, `3d`, `ui`, `audio` | Complete app shapes |
+| Built-in render | `2d_bevy_render`, `3d_bevy_render`, `ui_bevy_render` | Bevy's renderer for one domain |
+| API only | `2d_api`, `3d_api`, `ui_api` | Components/assets without a render backend |
+| Baseline | `default_app`, `default_platform` | Core app services vs platform/window/input services |
+| Grouped | `scene`, `picking`, `dev` | Related feature collections |
+
+API-only features cannot draw. They are for custom/external renderers that
+consume Bevy's world-side types.
+
+## Headless server
 
 ```toml
-# I want Bevy's 3D component types and shading hooks,
-# but I'm bringing my own render pipeline.
-[dependencies]
-bevy = { version = "0.18", default-features = false, features = ["3d_api"] }
-```
-
-`2d_api`, `3d_api`, `ui_api` enable the **API surface** (component types, asset types, shader types) without enabling the high-level renderer plugins. New in 0.18.
-
-### Headless server
-
-```toml
-[dependencies]
-# No rendering, no windowing, no audio — just ECS + assets + scenes.
-bevy = { version = "0.18", default-features = false, features = [
-    "bevy_scene",
-    "bevy_asset",
-    "serialize",
+bevy = { version = "0.19", default-features = false, features = [
+    "default_app",
     "multi_threaded",
+    "serialize",
+    "bevy_world_serialization", # omit if the server never loads saved worlds
 ] }
 ```
 
-Combine with `MinimalPlugins` (not `DefaultPlugins`) at runtime.
+Use `MinimalPlugins`, then add only the service plugins the server needs.
+`bevy_scene` is BSN in 0.19; classic reflected world serialization is
+`bevy_world_serialization`.
 
-### Minimal client, opt-in input
+## Custom renderer
 
 ```toml
-[dependencies]
-bevy = { version = "0.18", default-features = false, features = [
+bevy = { version = "0.19", default-features = false, features = [
+    "default_app",
     "3d_api",
-    "x11",         # or "wayland", "windows", "macos"
-    "mouse",
-    "keyboard",
-    "gamepad",
-    # touch, gestures — add only if needed
 ] }
 ```
 
-In 0.18, `default-features = false` no longer turns on input by default. Opt in to `mouse`, `keyboard`, `gamepad`, `touch`, `gestures` individually.
+Add `bevy_winit`/platform input only if the custom renderer shares Bevy's
+window event loop. Add `3d_bevy_render` instead of `3d_api` if you actually want
+Bevy's built-in renderer.
 
-## Feature renames (0.17 → 0.18)
+## Input and controllers
 
-| 0.17 name | 0.18 name |
-|---|---|
-| `animation` | `gltf_animation` |
-| `bevy_sprite_picking_backend` | `sprite_picking` |
-| `bevy_ui_picking_backend` | `ui_picking` |
-| `bevy_mesh_picking_backend` | `mesh_picking` |
-| `documentation` | `reflect_documentation` |
+- `mouse`, `keyboard`, `gamepad`, `touch`, and `gestures` enable API pieces.
+- For native controller discovery/input, enable `bevy_gilrs`; it also enables
+  `gamepad`. The `gamepad` feature alone is not the platform backend.
+- The high-level `default_platform` collection includes `bevy_gilrs`, Winit,
+  desktop window backends, default font, and `webgl2`.
 
-CI for a 0.17 → 0.18 upgrade should grep `Cargo.toml` for the left column.
-
-## WASM-specific advice
+## Browser profile
 
 ```toml
-# In your client crate's Cargo.toml:
-[dependencies]
-bevy = { version = "0.18", default-features = false, features = [
-    "3d_api",          # not "3d" — drop the default renderer
-    "bevy_winit",      # window/event loop
-    "webgl2",          # default browser backend; add "webgpu" if you also want it
-    "mouse",
-    "keyboard",
-    "touch",           # mobile browsers
+bevy = { version = "0.19", default-features = false, features = [
+    "3d",
+    "ui",
+    "touch",
+    # "webgpu", # overrides WebGL2; use a separate WebGPU artifact
 ] }
-
-[profile.wasm-release]
-inherits = "release"
-opt-level = "z"        # size, not speed
-lto = "fat"
-codegen-units = 1
-strip = "debuginfo"
 ```
 
-Bundle size targets: a stripped `wasm-opt -Oz` release should fit in **5–10 MB** for a moderately-featured 3D client. If your bundle is >20 MB, the most common cause is leaving `default-features = true`.
+The `3d` profile already includes the default platform and WebGL2 path. Enabling
+`webgpu` overrides `webgl2`; it is not a runtime fallback build. See
+[`bevy-wasm-webgpu`](../bevy-wasm-webgpu/SKILL.md).
 
-## Gotchas (0.18)
+## 0.19 implications and traps
 
-- **`default-features = true` (or omitted) enables ~30 features.** That's fine for desktop dev, fatal for WASM. Always explicit-feature WASM builds.
-- **Dev-vs-release feature split.** A common pattern is `[features] dev = ["bevy/dynamic_linking", "bevy/file_watcher", "bevy/embedded_watcher"]` and only enable `dev` in `cargo run`, not `cargo build --release`.
-- **`bevy_dev_tools`** (FPS overlay, system diagnostics) is its own feature — add it in `dev` and gate the plugin behind `#[cfg(feature = "bevy_dev_tools")]`.
-- **`multi_threaded`** is a separate Bevy feature in 0.18. On by default through the high-level collections; off in headless minimal builds unless you ask for it.
-- **`trace_tracy` / `trace_chrome`** are mutually exclusive — picking both at once will pick one and silently ignore the other.
-- **Platform features** (`x11`, `wayland`, `windows`, `macos`, `android`, `ios`) — at most one per target. Bevy will pick a sensible default if you don't, but for WASM you need `bevy_winit` and a web backend (`webgl2` or `webgpu`).
+- `2d` and `3d` no longer imply `ui`; add `ui` explicitly.
+- `2d`, `3d`, and `ui` no longer imply `audio`; add `audio` or a lower-level
+  codec combination explicitly.
+- `scene` now enables both `bevy_world_serialization` and the new BSN
+  `bevy_scene`.
+- Keep `dev`, `dynamic_linking`, file watchers, tracing, and dev tools behind a
+  project development feature; do not ship them accidentally.
+- Native Linux window backends are `x11` and `wayland`; target-specific mobile
+  activity features are mutually exclusive where documented. Do not invent
+  `windows` or `macos` Bevy feature names.
+- Profile collections are the stable starting point. Use lower-level
+  collections only when compile time, binary size, or a custom renderer makes
+  the maintenance cost worthwhile.
 
 ## See also
 
-- `bevy-wasm-webgpu` — the WASM-specific story for picking a graphics backend.
-- `bevy-migration-0-17-to-0-18` — full feature-rename table and `default-features` change.
+- [`bevy-rendering`](../bevy-rendering/SKILL.md) — renderer decision boundary.
+- [`bevy-wasm-webgpu`](../bevy-wasm-webgpu/SKILL.md) — browser build pipeline.
+- [`bevy-a11y`](../bevy-a11y/SKILL.md) — input/backend requirements for accessibility.
+- [`bevy-migration-0-18-to-0-19`](../bevy-migration-0-18-to-0-19/SKILL.md) — changed implications.

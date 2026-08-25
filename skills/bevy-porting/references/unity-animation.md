@@ -1,4 +1,4 @@
-# bevy-porting — Unity Mecanim / Animator → Bevy 0.18 animation graph
+# bevy-porting — Unity Mecanim / Animator → Bevy 0.19 animation graph
 
 > Referenced from `bevy-porting/SKILL.md § Unity (priority)`.
 
@@ -7,7 +7,7 @@
 Unity's Animator window: states ARE clips; you draw transitions between states.
 Bevy's `AnimationGraph`: a blend DAG of nodes; transitions are runtime weight ramps.
 
-| Unity Mecanim | Bevy 0.18 |
+| Unity Mecanim | Bevy 0.19 |
 |---|---|
 | Animator Controller asset | `AnimationGraph` asset |
 | State (with clip) | `AnimationNodeIndex` (clip node) |
@@ -61,7 +61,7 @@ fn drive_locomotion(
 
 ## Blend Trees
 
-| Unity | Bevy 0.18 |
+| Unity | Bevy 0.19 |
 |---|---|
 | 1D Blend Tree | `graph.add_clip` siblings under a blend node; weights computed from your `Resource<f32>` and written to `graph.get_mut(node).weight` |
 | 2D Blend Tree | Two weighted axes; do-able but verbose — simplify to 1D where possible |
@@ -117,7 +117,7 @@ for `add_event_to_target` (fires on the bone entity, not the player).
 
 ## Avatar / Humanoid retargeting
 
-Bevy 0.18 has **no built-in humanoid retargeting**. Clip targets are resolved by name:
+Bevy 0.19 has **no built-in humanoid retargeting**. Clip targets are resolved by name:
 `AnimationTargetId::from_name(&Name::new("Hips"))`.
 
 Options:
@@ -176,6 +176,6 @@ Settings, disable compression ("Off") and re-bake before running the extractor.
 
 - [`../SKILL.md`](../SKILL.md) — bevy-porting dispatcher
 - [`unity-input.md`](unity-input.md) — porting Unity input alongside animation state
-- [`bevy-animation/SKILL.md`](../../bevy-animation/SKILL.md) — full Bevy 0.18 animation API
+- [`bevy-animation/SKILL.md`](../../bevy-animation/SKILL.md) — full Bevy 0.19 animation API
 - [`bevy-animation/references/state-machines.md`](../../bevy-animation/references/state-machines.md)
 - [`bevy-animation/references/animation-events.md`](../../bevy-animation/references/animation-events.md)

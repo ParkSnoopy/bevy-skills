@@ -141,7 +141,7 @@ requires `AGE` + `LIFETIME`.
 
 Applies a texture to each particle. The struct has a `texture_slot: ExprHandle` field;
 the exact API for producing that handle from a texture path lives on `Module` (see
-[docs.rs/bevy_hanabi/0.18.0](https://docs.rs/bevy_hanabi/0.18.0/bevy_hanabi/) — the
+[docs.rs/bevy_hanabi/0.19.0](https://docs.rs/bevy_hanabi/0.19.0/bevy_hanabi/) — the
 texture-slot helper has shuffled across minor versions). Pair this with a
 `Material` texture-binding setup on the `EffectAsset` for the actual image upload.
 

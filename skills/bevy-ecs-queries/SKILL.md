@@ -1,15 +1,15 @@
 ---
 name: bevy-ecs-queries
-description: Use when writing `Query<D, F>` with filters like `With`/`Without`/`Or`, detecting changes with `Changed<T>`/`Added<T>`, parallelising with `par_iter`/`par_iter_mut`, building a query lens with `transmute_lens`, or hitting the new 0.18 `ArchetypeQueryData` bound. Covers Bevy 0.18 query patterns.
+description: Use when writing `Query<D, F>` with `With`/`Without`/`Or`, detecting `Changed<T>`/`Added<T>`, parallelising with `par_iter_mut`, building a query lens, or fixing Bevy 0.19 generic-query errors involving `IterQueryData` or `SingleEntityQueryData`.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "1"
   area: ecs
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — ECS Queries
+# Bevy 0.19 — ECS Queries
 
 ## When to use this skill
 
@@ -17,7 +17,7 @@ metadata:
 - Filtering by presence (`With`/`Without`), alternation (`Or`), or change detection (`Changed`/`Added`).
 - Parallelising over a large entity set with `par_iter_mut`.
 - Borrowing a subset of a query via a lens (`transmute_lens`).
-- Compiler error mentioning `ArchetypeQueryData` (new bound in 0.18).
+- Compiler error mentioning `IterQueryData` or `SingleEntityQueryData` after upgrading to 0.19.
 
 ## Canonical pattern
 
@@ -93,13 +93,14 @@ fn use_lens(mut q: Query<(&mut Transform, &Velocity)>) {
 }
 ```
 
-## Gotchas (0.18)
+## Bevy 0.19 gotchas
 
-- **`ArchetypeQueryData`** is a new trait that bounds query data types where the exact item count must be known at compile time (e.g. `for_each`-style ergonomics). If you get a "trait `ArchetypeQueryData` not implemented" error, you're using a dynamic query (`FilteredEntityRef`/`FilteredEntityMut`) where a static one is required. Re-shape the query.
-- **`EntityMut::get_components_mut::<(&mut A, &mut B)>()`** is the safe way to grab two `&mut`s out of one entity in 0.18 — returns `Result<_, QueryAccessError>`. Don't reach for `unsafe` `World::get_mut` aliasing tricks.
+- **Nested query access added bounds in 0.19.** Generic mutable iteration usually needs `D: IterQueryData`; single-entity access, query transmutation/join, traversal, and sorting may need `D: SingleEntityQueryData`. Read-only iteration retains the broader bounds.
+- **Non-iterable query data uses lending iteration.** Keep `D: QueryData`, call `let mut iter = query.iter_mut()`, then repeatedly call `iter.fetch_next()` when a nested query item may access several entities.
+- **`EntityMut::get_components_mut::<(&mut A, &mut B)>()`** is the safe way to grab two `&mut`s out of one entity and now carries a `SingleEntityQueryData` bound. It returns `Result`; do not reach for unchecked aliasing.
 - **`Query::get`/`get_mut` returns `Result`, not `Option`**. The error type carries the entity, so don't swallow it with `.ok()` if you actually need to know why a lookup missed.
 - **`Or<(With<A>, With<B>)>`** — `Or` alternates over **filters**, not raw component types. `Or<(A, B)>` does not compile.
-- **`Changed`/`Added` are tick-based.** A system that runs every other frame can miss changes only seen in the skipped frame. If you must not miss a change, use observers or a buffered queue.
+- **`Changed`/`Added` are tick-based.** They compare against the system's last run, so ordinary run conditions do not lose an intervening change. They report mutation, not semantic inequality; use observers/messages when every occurrence or old/new value matters.
 - **Don't pair `par_iter_mut` with `Commands`.** Spawn/despawn from a sequential system that consumes a `Resource` queue written by the parallel one.
 
 ## See also
@@ -107,3 +108,4 @@ fn use_lens(mut q: Query<(&mut Transform, &Velocity)>) {
 - `bevy-ecs-components` — declaring the components queried here.
 - `bevy-ecs-systems` — using queries inside `SystemParam` and run conditions.
 - `bevy-migration-0-17-to-0-18` — `EntityMut::get_components_mut` and tick-type move.
+- `bevy-migration-0-18-to-0-19` — nested-query trait bounds and resources in queries.

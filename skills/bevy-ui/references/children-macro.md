@@ -1,6 +1,6 @@
-# Bevy 0.18 UI — `children![]` and `.with_children(...)`
+# Bevy 0.19 UI — `children![]` and `.with_children(...)`
 
-Bevy 0.18 offers two ways to attach child entities to a UI node. Use `children![]`
+Bevy 0.19 offers two ways to attach child entities to a UI node. Use `children![]`
 for declarative tree construction at spawn time; use `.with_children(...)` when
 you need a reference to the parent entity or want to spawn children conditionally.
 
@@ -11,7 +11,7 @@ you need a reference to the parent entity or want to spawn children conditionall
 | `children![bundle1, bundle2, ...]` | Declarative, co-located with the parent bundle. Best for static UI trees. |
 | `.with_children(\|p\| { p.spawn(...) })` | When you need the parent `Entity`, or for dynamic / conditional children. |
 
-`children![]` is in `bevy::prelude` as of Bevy 0.18.
+`children![]` is in `bevy::prelude` as of Bevy 0.19.
 
 ## Common patterns
 
@@ -51,8 +51,8 @@ fn ui_tree(asset_server: &AssetServer) -> impl Bundle {
                 // Grandchild — the text label
                 Text::new("Click me"),
                 TextFont {
-                    font: asset_server.load("fonts/FiraSans-Bold.ttf"),
-                    font_size: 28.0,
+                    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(),
+                    font_size: FontSize::Px(28.0),
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -95,7 +95,7 @@ fn spawn_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
                     BackgroundColor(Color::srgb(0.15, 0.15, 0.15)),
                     children![(
                         Text::new(*label),
-                        TextFont { font_size: 22.0, ..default() },
+                        TextFont { font_size: FontSize::Px(22.0), ..default() },
                         TextColor(Color::WHITE),
                     )],
                 ));
@@ -112,9 +112,9 @@ sub-entity.
 
 ## Pitfalls
 
-- **`children![]` requires Rust 2024 edition** (or Rust ≥ 1.85 with explicit
-  edition in `Cargo.toml`). The macro uses `#![feature(..)]` stubs that stabilised
-  in Rust 2024. The tester crate's `Cargo.toml` sets `edition = "2024"`.
+- **Edition is not a `children![]` requirement.** Bevy 0.19 itself requires its
+  documented minimum Rust toolchain, but a consuming crate does not need to switch
+  editions merely to use this macro.
 
 - **Bundle order inside `children![]`.** Each comma-separated item is a complete
   bundle. Wrap multi-component children in a tuple:

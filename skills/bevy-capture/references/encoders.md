@@ -4,21 +4,28 @@
 
 ## Mp4Openh264Encoder
 
-The headline differentiator of `bevy_capture`: **fully in-process, no shell-out**. The crate links against Cisco's OpenH264 dynamic library via the `openh264-sys2` crate; the binary is fetched at build time (same mechanism Mozilla Firefox uses).
+The headline differentiator of `bevy_capture`: **in-process encoding with no
+`ffmpeg` command at runtime**. The encoder uses the `openh264` / `openh264-sys2`
+dependency chain; validate its native-library packaging on every shipping target.
 
 **Cargo feature:** `mp4_openh264`.
 
-**Construction:** `Mp4Openh264Encoder::new(writer, width, height) -> Result<Self, _>`. The writer is any `Write` (e.g. `std::fs::File`).
+**Construction:** `Mp4Openh264Encoder::new(writer, width, height) -> Result<Self, _>`. The writer implements `Write + Seek` (for example `std::fs::File`) and dimensions are `u16`.
 
-**License note:** OpenH264 ships under Cisco's OBQI (Open Binary Quality Interface) terms. Cisco covers the H.264 baseline-profile royalty. If your project policy forbids non-MIT/Apache runtime binaries, use one of the ffmpeg encoders instead.
+**Distribution note:** H.264 patent/licensing and OpenH264 binary redistribution
+requirements are product- and territory-sensitive. Have release/legal owners review
+the exact binary and distribution path; the Rust crate's license is not the whole
+codec-distribution analysis.
 
 **Typical use:**
 - CI pipelines generating test output MP4s without installing `ffmpeg`.
-- Desktop apps shipped as a single binary.
+- Native tools that need predictable in-process encoding without an installed CLI.
 
 ## Mp4FfmpegCliEncoder
 
-Collects all frames in memory (or a tempdir, depending on impl detail) during the run, then shells out to `ffmpeg` **once** when `Capture::stop()` is called or the encoder is dropped. Quality and codec options are configurable via builder methods.
+Writes numbered PNG frames to a temporary directory during the run, then shells out
+to `ffmpeg` **once** when `Capture::stop()` is called or the encoder is dropped.
+Quality and codec options are configurable via builder methods.
 
 **Cargo feature:** `mp4_ffmpeg_cli`.
 
@@ -27,17 +34,19 @@ Collects all frames in memory (or a tempdir, depending on impl detail) during th
 **Requirement:** `ffmpeg` on `$PATH` when stop/flush occurs.
 
 **Pros:** Full ffmpeg codec + filter graph access; good for offline batch renders.
-**Cons:** Keeps frames around until end — unsuitable for very long recordings unless backed by a tempdir.
+**Cons:** Keeps every PNG until finalization, so long captures can consume substantial
+temporary-disk space.
 
 ## Mp4FfmpegCliPipeEncoder
 
-Spawns a long-running `ffmpeg` child at `Capture::start()` and pipes raw RGBA frames to its stdin per frame. The child writes the MP4 incrementally.
+Spawns a long-running `ffmpeg` child when the first frame is encoded and pipes raw
+RGBA frames to its stdin. The child writes the MP4 incrementally.
 
 **Cargo feature:** `mp4_ffmpeg_cli_pipe` (a *separate* feature from `mp4_ffmpeg_cli` — enabling one does not enable the other).
 
 **Construction:** `Mp4FfmpegCliPipeEncoder::new(path) -> Result<Self, _>` then chain `.with_framerate`, `.with_crf`, `.with_preset(String)`, etc.
 
-**Requirement:** `ffmpeg` on `$PATH` at startup (the child is spawned eagerly).
+**Requirement:** `ffmpeg` on `$PATH` when the first frame is encoded.
 
 **Pros:** Memory-efficient for long recordings; output file grows incrementally.
 **Cons:** Any ffmpeg crash mid-run corrupts the output. Pipe backpressure can stall the render loop on slow storage.
@@ -50,13 +59,13 @@ Writes one PNG per rendered frame into a specified output directory. No video en
 
 **Construction:** `FramesEncoder::new(dir_path)`. The directory is created at first frame; no `Result`.
 
-**Pros:** Lossless; zero system dependencies; trivial to debug — you can open frame N in any viewer. **Note on WASM:** `FramesEncoder` is the only encoder that compiles for `wasm32-unknown-unknown`, but writing frames requires JS interop or a virtual FS (e.g. Emscripten) — there is no out-of-the-box filesystem in a browser WASM context. See `bevy-wasm-webgpu` for the full WASM build path.
+**Pros:** Lossless; zero external programs; trivial to debug — you can open frame N in any viewer. **Browser note:** the implementation writes through `std::fs`; a browser build needs a separate JS download or streaming bridge rather than an ordinary path.
 **Cons:** Large output (3–10× MP4 for the same content); must be assembled into video separately.
 
 ## Choosing in practice
 
 ```
-Need WASM support?                     → FramesEncoder
+Need browser delivery?                → Design a JS download/streaming bridge
 Need in-process, no system deps?       → Mp4Openh264Encoder
 Need ffmpeg codec control, short clip? → Mp4FfmpegCliEncoder
 Need ffmpeg, memory-efficient, long?   → Mp4FfmpegCliPipeEncoder
@@ -65,4 +74,4 @@ Need ffmpeg, memory-efficient, long?   → Mp4FfmpegCliPipeEncoder
 ## See also
 
 - [`SKILL.md`](../SKILL.md) — dispatcher with canonical pattern.
-- [`bevy-0-18-patch.md`](bevy-0-18-patch.md) — patches to build 0.4.1 against Bevy 0.18.
+- [`compatibility.md`](compatibility.md) — native Bevy 0.19 support in version 0.6.

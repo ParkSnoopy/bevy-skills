@@ -1,10 +1,10 @@
-# bevy-porting — UGUI + UI Toolkit → bevy_ui (Bevy 0.18)
+# bevy-porting — UGUI + UI Toolkit → bevy_ui (Bevy 0.19)
 
 > Referenced from `bevy-porting/SKILL.md § Unity (priority)`.
 
 ## Two Unity UI worlds
 
-| Unity system | Shape | Bevy 0.18 mental model |
+| Unity system | Shape | Bevy 0.19 mental model |
 |---|---|---|
 | **UGUI** (legacy) | Canvas → RectTransform hierarchy, prefab-driven | `Node` tree; anchors/pivots → `PositionType` + flex |
 | **UI Toolkit** (newer) | UXML templates + USS stylesheets, retained mode | `Node` tree; USS rules → field values on spawn |
@@ -12,7 +12,7 @@
 Both map to the same Bevy `Node` entity model. The flex (Taffy/CSS) mental model is closer
 to UI Toolkit than to UGUI's anchor/pivot system.
 
-See [`bevy-ui/SKILL.md`](../../bevy-ui/SKILL.md) for the full Bevy 0.18 UI API.
+See [`bevy-ui/SKILL.md`](../../bevy-ui/SKILL.md) for the full Bevy 0.19 UI API.
 
 ## UGUI Canvas → root `Node`
 
@@ -33,7 +33,7 @@ commands.spawn(Node {
 This is the trickiest single area. UGUI's anchor/pivot/size-delta model has no direct
 counterpart. Translate to Bevy's Taffy/flex properties:
 
-| UGUI pattern | Bevy 0.18 |
+| UGUI pattern | Bevy 0.19 |
 |---|---|
 | Stretch to fill parent | `width: Percent(100), height: Percent(100)` |
 | Anchored bottom-right, size (200, 100) | `position_type: Absolute, bottom: Px(0), right: Px(0), width: Px(200), height: Px(100)` |
@@ -49,7 +49,7 @@ top-left corner by default. For centered rotation, offset the child or use a wra
 ## UI Toolkit (USS/UXML) → `Node` tree
 
 UXML templates → spawn entity trees in code (`children![]` or `.with_children`).
-USS class selectors do not exist in Bevy 0.18 `bevy_ui` — there is no runtime style
+USS class selectors do not exist in Bevy 0.19 `bevy_ui` — there is no runtime style
 sheet resolver. Map USS rule blocks directly to `Node` field values at spawn time.
 
 Community crates exist for class-based/reactive styling (search crates.io for
@@ -79,11 +79,11 @@ behaviour (OnPointerEnter fires after the first frame). See `bevy-ui/SKILL.md §
 
 ## Text (TextMeshPro → `Text` + `TextFont`)
 
-| Unity | Bevy 0.18 |
+| Unity | Bevy 0.19 |
 |---|---|
 | `TextMeshPro` component | `Text::new("...")` |
 | TMP font asset (`.asset`) | `Font` handle via `asset_server.load("fonts/Roboto.ttf")` |
-| `fontSize` | `TextFont { font_size: 32.0, .. }` |
+| `fontSize` | `TextFont { font_size: FontSize::Px(32.0), .. }` |
 | `color` | `TextColor(Color::WHITE)` |
 | `outlineWidth` / `shadowOffset` | `TextShadow { offset: Vec2::new(2.0, -2.0), .. }` |
 
@@ -108,7 +108,7 @@ Node {
 }
 ```
 
-Bevy 0.18 uses [Taffy](https://github.com/DioxusLabs/taffy) for layout — the same
+Bevy 0.19 uses [Taffy](https://github.com/DioxusLabs/taffy) for layout — the same
 engine as web CSS flexbox/grid. `LayoutAlgorithm::Flex` is the default.
 
 ## Animation / tweens (DOTween → curves)
@@ -134,5 +134,5 @@ For curve utilities see
 
 - [`../SKILL.md`](../SKILL.md) — bevy-porting dispatcher
 - [`unity-input.md`](unity-input.md) — wiring input to UI buttons
-- [`bevy-ui/SKILL.md`](../../bevy-ui/SKILL.md) — full Bevy 0.18 UI reference
+- [`bevy-ui/SKILL.md`](../../bevy-ui/SKILL.md) — full Bevy 0.19 UI reference
 - [`bevy-animation/references/curves-and-tweening.md`](../../bevy-animation/references/curves-and-tweening.md) — `EaseFunction`, `EasingCurve` for UI tweens

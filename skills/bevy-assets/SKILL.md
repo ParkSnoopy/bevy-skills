@@ -1,15 +1,15 @@
 ---
 name: bevy-assets
-description: Use when loading anything with `AssetServer`, holding a `Handle<T>`, indexing `Assets<T>`, enabling hot-reload via `AssetPlugin { watch_for_changes_override: Some(true), .. }`, or chasing the 0.18 `LoadContext::path -> AssetPath` and `SeekableReader` changes. Covers Bevy 0.18 asset loading.
+description: Use when loading with `AssetServer`, holding `Handle<T>`, reading `Assets<T>`, enabling `AssetPlugin` hot reload, configuring `AssetServer::load_builder`, resolving `AssetPath`, or implementing a Bevy 0.19 `Reader::seekable` backend.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: asset
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Assets
+# Bevy 0.19 — Assets
 
 ## When to use this skill
 
@@ -39,7 +39,7 @@ fn main() {
 
 #[derive(Resource, Default)]
 struct MyHandles {
-    hero: Handle<Scene>,
+    hero: Handle<WorldAsset>,
     bricks: Handle<Image>,
 }
 
@@ -68,7 +68,7 @@ fn react_to_loads(
 ```rust
 use bevy::asset::AssetPath;
 
-// `LoadContext::path()` returns `AssetPath` in 0.18 (was `&Path` in 0.17).
+// `LoadContext::path()` returns `AssetPath`, not `&Path`.
 // Build paths explicitly when generating handles inside a custom loader:
 let path = AssetPath::from("textures/bricks.png");
 let path_with_label = AssetPath::from("models/hero.glb").with_label("Scene0");
@@ -88,16 +88,19 @@ handles: Res<MyHandles>,
 use bevy::asset::LoadState;
 
 if asset_server.load_state(&handles.hero) == LoadState::Loaded {
-    // Safe to query Assets<Scene> and use it.
+    // Safe to spawn WorldAssetRoot(handles.hero.clone()).
 }
 # }
-# #[derive(Resource)] struct MyHandles { hero: Handle<Scene> }
+# #[derive(Resource)] struct MyHandles { hero: Handle<WorldAsset> }
 ```
 
-## Gotchas (0.18)
+## Bevy 0.19 gotchas
 
 - **`LoadContext::path()` returns `AssetPath`**, not `&Path`. Callers that did `ctx.path().to_string_lossy()` need to `ctx.path().path().to_string_lossy()` or use the `AssetPath` API directly.
 - **`SeekableReader`** is new in 0.18. Loaders that need random access into the underlying file can ask: `if let Ok(s) = reader.seekable() { /* s: &mut dyn SeekableReader */ }`.
+- **Every custom `Reader` implements `seekable()` in 0.19.** Return `Ok(self)` when it also implements `AsyncSeek`; otherwise return `Err(ReaderNotSeekableError)`. `AsyncSeekForward` was removed.
+- **Advanced loads use builders in 0.19.** Prefer `AssetServer::load_builder()` for settings, guards, untyped loads, or approval overrides; the many specialized `load_*` variants are deprecated.
+- **`AssetPath::resolve` now takes `&AssetPath`.** Use `resolve_str`/`resolve_embed_str` when the child path starts as text.
 - **`AssetSourceBuilder::new(...)`** replaces `AssetSource::build().with_reader(...)`. Existing custom asset sources need to be re-shaped.
 - **`AssetSource` channel is `async_channel::Sender`** in 0.18 (was `crossbeam_channel`). Use `send_blocking(...)`.
 - **`Image::reinterpret_size(size)` returns `Result`** in 0.18.
@@ -108,5 +111,6 @@ if asset_server.load_state(&handles.hero) == LoadState::Loaded {
 
 ## See also
 
-- `bevy-custom-assets` — writing your own `AssetLoader` (must `#[derive(TypePath)]` in 0.18).
+- `bevy-custom-assets` — writing an `AssetLoader` and nested load builder.
 - `bevy-migration-0-17-to-0-18` — `LoadContext::path` and channel-type renames.
+- `bevy-migration-0-18-to-0-19` — load builders and required `Reader::seekable`.

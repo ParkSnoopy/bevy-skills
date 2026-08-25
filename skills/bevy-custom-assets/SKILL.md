@@ -1,20 +1,21 @@
 ---
 name: bevy-custom-assets
-description: Use when implementing `AssetLoader` for a custom file format, depending on other assets via `LoadContext::loader().with_settings(..).load(..)`, hitting the 0.18 requirement to `#[derive(TypePath)]` on the loader, or using `reader.read_to_end(..)` / `seekable()` async access. Covers Bevy 0.18 custom asset loaders.
+description: Use when implementing `AssetLoader`, depending on assets through `LoadContext::load_builder().with_settings(..).load(..)`, deriving `TypePath` on a loader, reading with `Reader::read_to_end`, or implementing the required `Reader::seekable` method in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "2"
   area: asset
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Custom asset loaders
+# Bevy 0.19 — Custom asset loaders
 
 ## When to use this skill
 
 - Loading a custom binary or text format (proprietary game data, sidecar configs, etc.).
 - Producing an asset that depends on other assets (e.g. a level loader that pulls referenced textures).
+- Migrating `LoadContext::loader()` or an old `NestedLoader` to `load_builder()` / `NestedLoadBuilder`.
 - Needing async access to the underlying file (`reader.read_to_end`, `reader.seekable()`).
 - Compiler error: "`MyLoader: TypePath` is not implemented" — 0.18 made `TypePath` mandatory on loaders.
 
@@ -64,7 +65,7 @@ impl AssetLoader for LevelLoader {
 
         // Pull in a referenced asset so it loads alongside this one.
         // The resulting handle ends up tracked as a dependency.
-        let _: Handle<Image> = load_context.load(&level.thumbnail);
+        let _: Handle<Image> = load_context.load_builder().load(level.thumbnail.clone());
 
         Ok(level)
     }
@@ -86,7 +87,7 @@ impl Plugin for LevelLoaderPlugin {
 ## Asking the reader for random access
 
 ```rust
-// 0.18: bevy::asset::io::Reader gained `seekable()`.
+// Bevy 0.19 requires Reader implementations to expose `seekable()`.
 # use bevy::asset::io::Reader;
 # async fn _example(reader: &mut dyn Reader) -> std::io::Result<()> {
 match reader.seekable() {
@@ -102,12 +103,14 @@ match reader.seekable() {
 # }
 ```
 
-## Gotchas (0.18)
+## Bevy 0.19 gotchas
 
 - **`#[derive(TypePath)]` is required on the loader struct** (not just the asset). 0.18 enforces this so loaders can be reflected. Without it: "`MyLoader: TypePath` is not implemented".
 - **`LoadContext::path()` returns `AssetPath`**, not `&Path`. To get the platform path, use `.path()` on it: `ctx.path().path()`.
 - **`LoadContext::asset_bytes()` is gone.** Use `let mut bytes = Vec::new(); reader.read_to_end(&mut bytes).await?;` inside the `load` async fn, or `reader.seekable()` for random access.
-- **Dependencies must be loaded through `LoadContext`**. `asset_server.load(...)` from inside a loader does **not** register the result as a dependency of the asset being built — use `load_context.load(...)` so `AssetEvent::LoadedWithDependencies` fires correctly.
+- **Dependencies must be loaded through `LoadContext`**. `asset_server.load(...)` from inside a loader does **not** register the result as a dependency of the asset being built — use `load_context.load_builder().load(...)` (or the `load(...)` convenience method) so `AssetEvent::LoadedWithDependencies` fires correctly.
+- **`LoadContext::loader()` was replaced in 0.19.** Use `load_context.load_builder()`. Immediate loads became `load_value`, dynamic loads became `load_erased`, and unknown-type loads became `load_untyped` builder operations.
+- **Custom `Reader` implementations must define `seekable()` in 0.19.** Return `Ok(self)` only when the type implements `AsyncSeek`; otherwise return `Err(ReaderNotSeekableError)`.
 - **`AssetLoader` is `async`** but you can't `tokio::spawn` inside it — the executor is Bevy's, not Tokio's. Use `bevy::tasks::futures_lite` or `bevy::tasks::AsyncComputeTaskPool` for compute-heavy work.
 - **`#[derive(Asset)]` is required on the asset type** and combined with `TypePath`. The asset's `Settings` type must be `Default + Serialize + DeserializeOwned + Send + Sync + 'static` to participate in `.meta` files.
 - **Extensions are matched on the full suffix.** `"level.ron"` matches `foo.level.ron` but not `foo.ron` — useful for disambiguating from generic RON.
@@ -117,3 +120,4 @@ match reader.seekable() {
 - `bevy-assets` — using a `Handle<MyAsset>` once it's loaded.
 - `bevy-voxel-data` — RON-driven asset patterns.
 - `bevy-migration-0-17-to-0-18` — `LoadContext::asset_bytes` removal.
+- `bevy-migration-0-18-to-0-19` — nested load builders and reader changes.

@@ -1,12 +1,12 @@
-# bevy-porting — Phaser 3 → Bevy 0.18
+# bevy-porting — Phaser 3 → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Engine coverage`.
 
-Phaser 3 is a scene-based 2D framework: each `Phaser.Scene` subclass has `preload()`, `create()`, and `update()` methods, a built-in physics engine (Arcade or Matter.js), tweens, a sprite-sheet animation manager, and a managed input system. This reference maps each of those subsystems to Bevy 0.18 equivalents.
+Phaser 3 is a scene-based 2D framework: each `Phaser.Scene` subclass has `preload()`, `create()`, and `update()` methods, a built-in physics engine (Arcade or Matter.js), tweens, a sprite-sheet animation manager, and a managed input system. This reference maps each of those subsystems to Bevy 0.19 equivalents.
 
 ## Concept map
 
-| Phaser 3 | Bevy 0.18 |
+| Phaser 3 | Bevy 0.19 |
 |---|---|
 | `Phaser.Scene` subclass | Plugin + a set of systems |
 | `preload()` | `Startup` system + `AssetServer::load(...)` |
@@ -66,7 +66,7 @@ app.add_systems(FixedUpdate, apply_physics);
 
 ## Arcade Physics → `bevy_rapier2d` / `avian2d`
 
-Bevy 0.18 core has no physics engine. Two community crates provide 2D physics:
+Bevy 0.19 core has no physics engine. Two community crates provide 2D physics:
 
 - **`bevy_rapier2d`** — wraps the Rapier physics engine; mature, feature-rich, comparable to Arcade + Matter combined.
 - **`avian2d`** — Bevy-native, ECS-first design; slightly less mature but idiomatic.

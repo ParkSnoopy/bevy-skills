@@ -1,4 +1,4 @@
-# bevy-porting — GameMaker Studio 2 → Bevy 0.18
+# bevy-porting — GameMaker Studio 2 → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Engine coverage`.
 
@@ -6,14 +6,14 @@ GameMaker Studio 2 (GMS2) organises content into Objects (with event-driven code
 
 ## Object events → Bevy systems
 
-| GMS2 event | Bevy 0.18 |
+| GMS2 event | Bevy 0.19 |
 |---|---|
 | Create | `Startup` system, or an `Added<C>` observer on first spawn |
 | Step | `Update` system |
 | Begin Step | `PreUpdate` system |
 | End Step | `PostUpdate` system |
 | Draw | Bevy renders automatically; spawn `Mesh2d` entities for custom draw |
-| Destroy | `On<Remove<C>>` observer, or detect `RemovedComponents<C>` in a system |
+| Destroy | `On<Remove, C>` observer, or detect `RemovedComponents<C>` in a system |
 | Collision | `bevy_rapier2d` `CollisionEvent` reader |
 | Alarm[n] | `Timer` component + a system that fires on expiry |
 
@@ -46,7 +46,7 @@ fn spawn_enemy(mut commands: Commands, x: f32, y: f32) {
 
 ## GML idioms → Rust
 
-| GML | Bevy 0.18 |
+| GML | Bevy 0.19 |
 |---|---|
 | `global.score` | `#[derive(Resource)] struct Score(pub i32)` |
 | `with(obj_enemy) { ... }` | `Query<&mut Enemy>` + iterate |
@@ -88,7 +88,7 @@ fn advance_frames(mut query: Query<(&mut FrameTimer, &mut Sprite)>, time: Res<Ti
 GMS2 rooms are 2D scenes with layers (Background, Instance, Tile, Asset, etc.). Bevy equivalents:
 
 - **Spawn function** — a `Startup` (or state-enter) system that spawns room contents; cleanest approach.
-- **`DynamicScene`** — serialisable ECS snapshot; useful if you need round-trippable room state.
+- **`DynamicWorld`** from `bevy_world_serialization` — serialisable ECS snapshot for round-trippable room state.
 
 Use `scripts/gamemaker/gms2_inventory.py` to list all instances in a room before writing the spawn function.
 
@@ -130,7 +130,7 @@ Output groups resources by type (GMObject, GMSprite, GMRoom, GMSound, GMScript, 
 
 ## Build / publish
 
-| GMS2 | Bevy 0.18 |
+| GMS2 | Bevy 0.19 |
 |---|---|
 | Windows/macOS/Linux (IDE export) | `cargo build --release --target <triple>` |
 | HTML5 export | `wasm32-unknown-unknown` + `wasm-bindgen` |
