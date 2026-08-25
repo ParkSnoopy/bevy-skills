@@ -1,6 +1,8 @@
-# Palette — Rust Types and Build Function
+# Palette — Stable Identity and Dense Runtime IDs
 
-Runtime lookup table from `BlockId` (position in catalog) to `PaletteEntry`.
+Runtime lookup table from a dense `BlockId` to `PaletteEntry`, plus a reverse
+map from immutable serialized identifiers. Dense IDs are an optimization for the
+current process, not a save-file or network contract.
 See [ron-schema.md](ron-schema.md) for the RON source and
 [atlas-binding.md](atlas-binding.md) for how `face_tiles` feeds UV generation.
 
@@ -13,6 +15,12 @@ use bevy::prelude::*;
 use bevy::reflect::TypePath;
 use serde::Deserialize;
 use std::collections::HashMap;
+
+pub type BlockId = u16;
+
+#[derive(Debug, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[serde(transparent)]
+pub struct StableBlockId(pub String);
 
 #[derive(Debug, Deserialize, Clone, Copy, Default)]
 pub enum Visibility { #[default] Empty, Translucent, Opaque }
@@ -27,6 +35,7 @@ pub struct BlockFaces {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct BlockDef {
+    pub id:         StableBlockId,
     pub name:       String,
     pub visibility: Visibility,
     #[serde(default)] pub faces: Option<BlockFaces>,
@@ -38,15 +47,16 @@ pub struct BlockCatalog {
     pub blocks: Vec<BlockDef>,
 }
 
-/// Compact runtime palette: catalog index == BlockId.
+/// Compact runtime palette. `BlockId` values may change after catalog edits.
 #[derive(Resource, Default)]
 pub struct Palette {
-    pub by_id:   Vec<PaletteEntry>,
-    pub by_name: HashMap<String, u16>,
+    pub by_id: Vec<PaletteEntry>,
+    pub by_stable_id: HashMap<StableBlockId, BlockId>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct PaletteEntry {
+    pub stable_id:  StableBlockId,
     pub name:       String,
     pub visibility: Visibility,
     /// Atlas tile index for each of the six face directions.
@@ -91,14 +101,26 @@ use std::collections::HashMap;
 pub struct AtlasIndex(pub HashMap<String, u16>);
 
 pub fn build_palette(
-    catalog:  &BlockCatalog,
-    atlas:    &AtlasIndex,
-    mut palette: ResMut<Palette>,
-) {
-    palette.by_id.clear();
-    palette.by_name.clear();
+    catalog: &BlockCatalog,
+    atlas: &AtlasIndex,
+    palette: &mut Palette,
+) -> Result<(), String> {
+    let mut by_id = Vec::with_capacity(catalog.blocks.len());
+    let mut by_stable_id = HashMap::with_capacity(catalog.blocks.len());
 
-    for (id, def) in catalog.blocks.iter().enumerate() {
+    for (index, def) in catalog.blocks.iter().enumerate() {
+        match def.id.0.split_once(':') {
+            Some((namespace, key)) if !namespace.is_empty() && !key.is_empty() => {}
+            _ => return Err(format!(
+                "stable block id must be a non-empty namespace:key: {}",
+                def.id.0,
+            )),
+        }
+        let id = BlockId::try_from(index)
+            .map_err(|_| "block catalog exceeds the u16 runtime palette".to_owned())?;
+        if by_stable_id.insert(def.id.clone(), id).is_some() {
+            return Err(format!("duplicate stable block id: {}", def.id.0));
+        }
         let tile_of = |maybe: &Option<String>| -> u16 {
             maybe.as_ref()
                 .and_then(|p| atlas.0.get(p).copied())
@@ -123,15 +145,23 @@ pub fn build_palette(
             None => [0; 6],
         };
 
-        palette.by_id.push(PaletteEntry {
+        by_id.push(PaletteEntry {
+            stable_id:  def.id.clone(),
             name:       def.name.clone(),
             visibility: def.visibility,
             face_tiles,
         });
-        palette.by_name.insert(def.name.clone(), id as u16);
     }
+
+    // Publish only a fully validated palette.
+    *palette = Palette { by_id, by_stable_id };
+    Ok(())
 }
 ```
+
+Catalog order can still choose the dense layout because that keeps lookups and
+meshing compact. It is safe to reorder only because persisted data never stores
+these runtime values without a stable-ID translation table.
 
 ### Wiring in a system
 
@@ -140,12 +170,27 @@ fn on_catalog_loaded(
     catalog_assets: Res<Assets<BlockCatalog>>,
     catalog_handle: Res<CatalogHandle>,
     atlas:          Res<AtlasIndex>,
-    palette:        ResMut<Palette>,
+    mut palette:    ResMut<Palette>,
 ) {
     let Some(catalog) = catalog_assets.get(&catalog_handle.0) else { return };
-    build_palette(catalog, &atlas, palette);
+    if let Err(error) = build_palette(catalog, &atlas, &mut palette) {
+        error!(%error, "block catalog rejected");
+    }
 }
 ```
 
 Run this system in `Update` gated on `AssetEvent<BlockCatalog>` or a
 `State` transition — after both the catalog and atlas index are ready.
+
+## Save and network boundary
+
+Choose one of these formats:
+
+- Store a stable ID per voxel. Simple, but usually too large.
+- Store a save-local palette of stable IDs and bit-pack indices into that
+  palette. On load, resolve every stable ID to the current runtime `BlockId`
+  before expanding or remapping chunk data.
+
+Define a missing-block policy. Keeping an explicit `core:missing` entry preserves
+unknown modded blocks for repair; silently mapping unknown IDs to air destroys
+information and may change collision or progression state.

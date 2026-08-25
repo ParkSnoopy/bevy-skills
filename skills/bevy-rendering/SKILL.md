@@ -154,5 +154,6 @@ profile and Rapier/debug-render mismatches.
 - [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md)
 - [`bevy-pbr-materials`](../bevy-pbr-materials/SKILL.md)
 - [`bevy-physics`](../bevy-physics/SKILL.md)
+- [`bevy-diagnostics-profiling`](../bevy-diagnostics-profiling/SKILL.md)
 - [`bevy-vfx`](../bevy-vfx/SKILL.md)
 - [`bevy-wasm-webgpu`](../bevy-wasm-webgpu/SKILL.md)

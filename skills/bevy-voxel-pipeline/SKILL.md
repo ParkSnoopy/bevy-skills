@@ -1,6 +1,6 @@
 ---
 name: bevy-voxel-pipeline
-description: Use when meshing voxel chunks with `block-mesh-rs` (`greedy_quads` / `visible_block_faces`), translating a `GreedyQuadsBuffer` into a Bevy 0.19 `Mesh` via `try_insert_attribute`, choosing between greedy and simple meshing, or scheduling chunk meshing on `AsyncComputeTaskPool` so the main thread doesn't stall. Covers Bevy 0.19 voxel meshing.
+description: Use when meshing voxel chunks with `block-mesh-rs` (`greedy_quads` / `visible_block_faces`), translating a `GreedyQuadsBuffer` into a Bevy 0.19 `Mesh` via `try_insert_attribute`, choosing greedy versus simple meshing, or implementing the worker-side meshing function consumed by a bounded voxel runtime.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -16,7 +16,7 @@ metadata:
 - Building a Minecraft-style voxel world with chunked meshing.
 - Choosing between `greedy_quads` (fewer, larger quads — best for static terrain) and `visible_block_faces` (one quad per face — best for fast remesh on edits).
 - Wiring `block-mesh-rs` output into a Bevy 0.19 `Mesh`.
-- Avoiding main-thread stalls on remesh by spawning the work on `AsyncComputeTaskPool`.
+- Implementing a pure worker-side mesh build for `bevy-voxel-runtime` to schedule.
 
 ## Canonical pattern
 
@@ -94,31 +94,51 @@ pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
 }
 ```
 
-## Threading: get it off the main thread
+## Worker primitive only — not a production edit scheduler
+
+The following shows task ownership and non-blocking completion polling. It deliberately
+does **not** apply the result. A production edit-heavy game must first validate the
+section revision/lifecycle token, coalesce duplicate work, and respect bounded worker,
+result, upload, and collider budgets. Read `bevy-voxel-runtime` before wiring this into
+a world.
 
 ```rust
 use bevy::prelude::*;
-use bevy::tasks::{AsyncComputeTaskPool, Task};
-use futures_lite::future;
+use bevy::tasks::{futures::check_ready, AsyncComputeTaskPool, Task};
+
+#[derive(Clone, Copy)]
+struct MeshToken {
+    section: IVec3,
+    revision: u64,
+    epoch: u64,
+}
+
+struct MeshBuild {
+    token: MeshToken,
+    mesh: Option<Mesh>,
+}
 
 #[derive(Component)]
-struct MeshTask(Task<Option<Mesh>>);
+struct MeshTask(Task<MeshBuild>);
 
-# fn _kick(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+#[derive(Resource, Default)]
+struct CompletedMeshes(Vec<MeshBuild>);
+
+# fn _kick(mut commands: Commands) {
 let pool = AsyncComputeTaskPool::get();
 let blocks = vec![crate::BlockId::default(); 18 * 18 * 18]; // replace from chunk store
-let task = pool.spawn(async move { crate::mesh_chunk(&blocks) });
+let token = MeshToken { section: IVec3::ZERO, revision: 7, epoch: 2 };
+let task = pool.spawn(async move {
+    MeshBuild { token, mesh: crate::mesh_chunk(&blocks) }
+});
 commands.spawn(MeshTask(task));
 # }
 
-# fn _poll(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut q: Query<(Entity, &mut MeshTask)>) {
+# fn _poll(mut commands: Commands, mut completed: ResMut<CompletedMeshes>, mut q: Query<(Entity, &mut MeshTask)>) {
 for (entity, mut task) in &mut q {
-    if let Some(maybe_mesh) = future::block_on(future::poll_once(&mut task.0)) {
+    if let Some(result) = check_ready(&mut task.0) {
         commands.entity(entity).remove::<MeshTask>();
-        if let Some(mesh) = maybe_mesh {
-            let handle = meshes.add(mesh);
-            commands.entity(entity).insert(Mesh3d(handle));
-        }
+        completed.0.push(result); // validate token in the bounded apply stage
     }
 }
 # }
@@ -131,10 +151,15 @@ for (entity, mut task) in &mut q {
 - **UVs are not free.** `block-mesh` doesn't emit UVs — you compute them yourself from quad face direction and block ID. A texture atlas + per-quad offset is the standard approach (see `bevy-voxel-data`).
 - **`block-mesh-rs` is on Bevy-independent crate 0.2.0** (last updated 2022). It depends on `ilattice` and `ndshape`, both pure-Rust. Compatible with Bevy 0.19 by virtue of not depending on Bevy at all.
 - **Don't reach for `par_iter` inside a single chunk mesh** — block-mesh is already fast. The parallelism wins are across chunks, not within one. Spawn N chunk-mesh tasks on `AsyncComputeTaskPool`.
+- **A task pool is not a scheduler.** Never spawn one task per edit or apply a result
+  by coordinate alone. Use `bevy-voxel-runtime` for dirty fan-out, revisions, stale
+  rejection, coalescing, priority, backpressure, and atomic mesh/collider swaps.
 - **`try_insert_attribute` returns `Result<(), MeshAccessError>`** in Bevy 0.19. `ExtractedToRenderWorld` cannot occur for a freshly constructed mesh, but handle or propagate the result so later changes to mesh ownership stay safe.
 - **`RenderAssetUsages` lives in `bevy::asset`** (re-exported from `bevy::render::render_asset` privately). The public re-export is `bevy::asset::RenderAssetUsages`.
 
 ## See also
 
-- `bevy-voxel-data` — RON block definitions, palette, UV atlas baking.
-- `bevy-assets` — loading chunk data and managing the resulting Mesh handles.
+- [`bevy-voxel-data`](../bevy-voxel-data/SKILL.md) — stable block IDs, dense palettes, and atlas data.
+- [`bevy-voxel-runtime`](../bevy-voxel-runtime/SKILL.md) — production scheduling,
+  revision validation, bounded uploads, collider swaps, and telemetry.
+- [`bevy-assets`](../bevy-assets/SKILL.md) — loading chunk data and managing mesh handles.

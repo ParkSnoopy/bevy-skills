@@ -1,6 +1,6 @@
 ---
 name: bevy-assets
-description: Use when loading with `AssetServer`, holding `Handle<T>`, reading `Assets<T>`, enabling `AssetPlugin` hot reload, configuring `AssetServer::load_builder`, resolving `AssetPath`, or implementing a Bevy 0.19 `Reader::seekable` backend.
+description: Use when loading with `AssetServer`, holding `Handle<T>`, spawning Bevy 0.19 glTF `WorldAsset` scenes, reading `Assets<T>`, enabling hot reload, configuring `AssetServer::load_builder`, resolving `AssetPath`, or implementing a `Reader::seekable` backend.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -16,6 +16,8 @@ metadata:
 - Loading a model, texture, audio file, or scene.
 - Reading the loaded data back from `Assets<T>` once it's ready.
 - Reacting to load progress (`AssetEvent::Added` / `Modified`).
+- Spawning glTF scenes, waiting for `WorldInstanceReady`, reading names/extras, or
+  owning/despawning an instance cleanly.
 - Enabling hot-reload during development.
 - Writing your own loader → see `bevy-custom-assets`.
 
@@ -111,6 +113,10 @@ if asset_server.load_state(&handles.hero) == LoadState::Loaded {
 
 ## See also
 
+- [glTF scenes](references/gltf-scenes.md) — `GltfAssetLabel`, `WorldAssetRoot`,
+  instance readiness/ownership, names/extras, metadata proxies, and despawning.
 - `bevy-custom-assets` — writing an `AssetLoader` and nested load builder.
+- [`bevy-save-load`](../bevy-save-load/SKILL.md) — durable stable IDs and save schema;
+  glTF names/entity IDs are not persistence contracts.
 - `bevy-migration-0-17-to-0-18` — `LoadContext::path` and channel-type renames.
 - `bevy-migration-0-18-to-0-19` — load builders and required `Reader::seekable`.

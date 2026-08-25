@@ -1,6 +1,6 @@
 ---
 name: bevy-cameras
-description: Use when spawning Bevy 0.19 `Camera3d` or `Camera2d`, choosing perspective or orthographic `Projection`, rendering to an image with a `RenderTarget` component, wiring `FreeCamera`/`PanCamera`, ordering multiple views, or setting a per-camera `AmbientLight` override.
+description: Use when spawning Bevy 0.19 `Camera3d` or `Camera2d`, choosing a `Projection`, rendering to an image with a `RenderTarget` component, wiring `FreeCamera`/`PanCamera`, building an obstruction-aware third-person orbit camera, ordering views, or setting per-camera `AmbientLight`.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -18,6 +18,8 @@ metadata:
 - Wanting a drop-in free-look or pan controller without writing your own.
 - Configuring multiple cameras with different `order` for overlays.
 - Setting ambient brightness on a per-camera basis.
+- Building a third-person pivot/boom camera with fixed-pose interpolation and Rapier
+  obstruction casts.
 
 ## Canonical pattern
 
@@ -132,8 +134,13 @@ commands.spawn((Camera3d::default(), AmbientLight { brightness: 1000.0, ..defaul
 
 ## See also
 
+- [Third-person orbit camera](references/third-person-orbit.md) — pivot/boom separation,
+  pitch limits, smoothing, fixed interpolation, sphere casts, hysteresis, and actor fade.
 - [`bevy-rendering`](../bevy-rendering/SKILL.md) — renderer choice, forward/deferred,
   and render systems.
+- [`bevy-input-actions`](../bevy-input-actions/SKILL.md) — rebindable camera/aim input
+  and correct mouse-delta transfer.
+- [`bevy-physics`](../bevy-physics/SKILL.md) — Rapier scene-query setup and filtering.
 - [`bevy-pbr-materials`](../bevy-pbr-materials/SKILL.md) — lighting and camera-visible
   materials.
 - [`bevy-a11y`](../bevy-a11y/SKILL.md) — FOV, shake, motion, and viewport accessibility.

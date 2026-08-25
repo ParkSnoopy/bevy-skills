@@ -20,6 +20,13 @@ Copilot does not load Agent Skills directly. This file mirrors the key rules so 
 
 4. **No `unwrap()` in systems.** Bevy systems run every frame. Use `let ... else` or proper error propagation.
 
+5. **Bridge input into fixed ticks.** Translate physical input after `InputSystems`,
+   queue button transitions, accumulate relative motion, and drain both once on the
+   first fixed tick. Carry held buttons/absolute axes to every tick.
+
+6. **Persist stable domain IDs.** Save versioned DTOs, not `Entity`, dense runtime
+   palette indices, catalog order, asset handles, or reflected ECS layout by default.
+
 ## When editing skills in this repo
 
 Read `CLAUDE.md`. The frontmatter rules, lint script, and tester-crate workflow apply to all agents, not just Claude.
@@ -29,15 +36,21 @@ Read `CLAUDE.md`. The frontmatter rules, lint script, and tester-crate workflow 
 | Topic | Skill |
 |---|---|
 | ECS basics | `skills/bevy-core-concepts/` |
+| Rebindable input / gamepads / fixed bridge | `skills/bevy-input-actions/` |
+| Deterministic and visual testing | `skills/bevy-testing/` |
 | Components & required components | `skills/bevy-ecs-components/` |
 | Queries & filters | `skills/bevy-ecs-queries/` |
 | Systems, sets, run conditions | `skills/bevy-ecs-systems/` |
 | 0.18 → 0.19 breaks | `skills/bevy-migration-0-18-to-0-19/` |
 | 0.17 → 0.18 breaks | `skills/bevy-migration-0-17-to-0-18/` |
 | Assets & custom loaders | `skills/bevy-assets/`, `skills/bevy-custom-assets/` |
+| Save/load schemas and platform persistence | `skills/bevy-save-load/` |
 | WASM + WebGPU | `skills/bevy-wasm-webgpu/` |
 | Cameras | `skills/bevy-cameras/` |
 | PBR / materials | `skills/bevy-pbr-materials/` |
 | Renderer selection / custom passes | `skills/bevy-rendering/` |
+| Diagnostics / tracing / render profiling | `skills/bevy-diagnostics-profiling/` |
 | Physics / Rapier / collision queries | `skills/bevy-physics/` |
 | Game accessibility / adaptive controllers | `skills/bevy-a11y/` |
+| Audio / sinks / spatial / mixing | `skills/bevy-audio/` |
+| Voxel data, meshing, and production runtime | `skills/bevy-voxel-data/`, `skills/bevy-voxel-pipeline/`, `skills/bevy-voxel-runtime/` |

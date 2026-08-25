@@ -150,5 +150,9 @@ intent; order systems in that same schedule.
 - [`bevy-core-concepts`](../bevy-core-concepts/SKILL.md) — fixed schedules and ordering.
 - [`bevy-rendering`](../bevy-rendering/SKILL.md) — rendering and physics ownership boundary.
 - [`bevy-cameras`](../bevy-cameras/SKILL.md) — camera rays for picking and aiming.
+- [Third-person orbit camera](../bevy-cameras/references/third-person-orbit.md) —
+  Rapier sphere-cast obstruction and recovery hysteresis.
+- [`bevy-input-actions`](../bevy-input-actions/SKILL.md) — fixed-tick movement/aim commands.
+- [`bevy-testing`](../bevy-testing/SKILL.md) — deterministic app stepping and headless worlds.
 - [`bevy-a11y`](../bevy-a11y/SKILL.md) — accessible movement, timing, and aim alternatives.
 - [`bevy-voxel-pipeline`](../bevy-voxel-pipeline/SKILL.md) — collider proxies for voxel worlds.

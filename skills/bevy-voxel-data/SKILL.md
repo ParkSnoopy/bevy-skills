@@ -1,6 +1,6 @@
 ---
 name: bevy-voxel-data
-description: Use when defining voxel blocks in RON (`name`, `textures`, `flags`), building a runtime palette mapping `BlockId -> BlockDef`, baking per-block textures into a KTX2 atlas, or binding the atlas as `StandardMaterial.base_color_texture` so meshed quads sample by face index. Generic Bevy 0.19 voxel-data patterns — no game-specific data baked in.
+description: Use when defining Bevy 0.19 voxel blocks with immutable serialized IDs in RON, mapping them to a dense runtime `BlockId` palette, choosing chunk storage with explicit world extents, baking a KTX2 atlas, or binding face tiles through `StandardMaterial`.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -23,17 +23,18 @@ metadata:
 
 ## Canonical end-to-end flow
 
-**1. Define blocks in RON** (`assets/blocks.ron`):
+**1. Define blocks in RON** (`assets/blocks.ron`). `id` is the immutable,
+serialized identity; `name` is presentation text and may change:
 
 ```ron
 (
     blocks: [
-        ( name: "air",   visibility: Empty ),
-        ( name: "grass", visibility: Opaque,
+        ( id: "core:air", name: "Air", visibility: Empty ),
+        ( id: "core:grass", name: "Grass", visibility: Opaque,
           faces: ( top: "textures/grass_top.png",
                    bottom: "textures/dirt.png",
                    side: "textures/grass_side.png" ) ),
-        ( name: "stone", visibility: Opaque,
+        ( id: "core:stone", name: "Stone", visibility: Opaque,
           faces: ( all: "textures/stone.png" ) ),
     ],
 )
@@ -42,17 +43,24 @@ metadata:
 **2. Core Rust types** — `BlockCatalog` is a Bevy `Asset`; `Palette` is a `Resource`:
 
 ```rust
+pub type BlockId = u16;
+
+#[derive(Debug, Deserialize, Clone, Eq, Hash, PartialEq)]
+#[serde(transparent)]
+pub struct StableBlockId(pub String);
+
 #[derive(Debug, Deserialize, Asset, TypePath)]
 pub struct BlockCatalog { pub blocks: Vec<BlockDef> }
 
 #[derive(Resource, Default)]
 pub struct Palette {
-    pub by_id:   Vec<PaletteEntry>,   // index == BlockId
-    pub by_name: HashMap<String, u16>,
+    pub by_id: Vec<PaletteEntry>, // dense, process-local BlockId
+    pub by_stable_id: HashMap<StableBlockId, BlockId>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct PaletteEntry {
+    pub stable_id:  StableBlockId,
     pub name:       String,
     pub visibility: Visibility,
     /// Atlas tile per face: [−X, −Y, −Z, +X, +Y, +Z] (block-mesh order).
@@ -60,9 +68,11 @@ pub struct PaletteEntry {
 }
 ```
 
-**3. Build the palette** — walk the catalog, look up each face path in the
-`AtlasIndex` (JSON sidecar loaded alongside the KTX2 file), emit one
-`PaletteEntry` per block in catalog order (that order *is* the `BlockId` space).
+**3. Build the palette** — validate unique stable IDs, walk the catalog, look up
+each face path in the `AtlasIndex`, and assign dense runtime `BlockId` values.
+Catalog order may influence this runtime layout, but it is never the persistence
+contract. Saves and network formats store stable IDs directly or carry their own
+stable-ID palette and remap it when loading.
 
 **4. Bind the atlas** to `StandardMaterial.base_color_texture`; compute
 per-vertex UVs as `tile_x = tile_index % atlas_cols` during the meshing pass.
@@ -85,8 +95,9 @@ per-vertex UVs as `tile_x = tile_index % atlas_cols` during the meshing pass.
   default in the `3d` bundle). For trimmed WASM builds add `ktx2` and `zstd`
   explicitly. Use BC7 (desktop) or ETC2/ASTC (mobile) — see
   [references/ktx2-atlas.md](references/ktx2-atlas.md).
-- **Palette ordering is the `BlockId` space.** Reordering the catalog after a
-  save file ships will corrupt saves. Always append; never reorder.
+- **Runtime `BlockId` is not persistent identity.** It is a dense index rebuilt
+  for the current catalog. Persist immutable namespaced IDs such as `core:stone`,
+  validate duplicates, and map them to the current runtime palette on load.
 - **Texture bleeding at mip levels ≥ 1.** Add 2-pixel padding around each
   tile, or switch to a texture array with `clamp_to_edge` per slice. Details
   in [references/ktx2-atlas.md](references/ktx2-atlas.md) and
@@ -100,5 +111,8 @@ per-vertex UVs as `tile_x = tile_index % atlas_cols` during the meshing pass.
 ## See also
 
 - `bevy-voxel-pipeline` — the meshing step that consumes `face_tiles`.
+- [`bevy-voxel-runtime`](../bevy-voxel-runtime/SKILL.md) — edit dirtying,
+  revisions, bounded remeshing, and mesh/collider application.
+- [`bevy-save-load`](../bevy-save-load/SKILL.md) — versioned persistence and stable-ID migration.
 - `bevy-custom-assets` — implementing the RON catalog loader.
 - `bevy-pbr-materials` — wiring the atlas into `StandardMaterial`.

@@ -1,6 +1,6 @@
 {
   "name": "bevy-skills",
   "version": "0.19.0",
-  "description": "AI agent skills for Bevy 0.19: ECS, rendering, physics, assets, accessibility, UI, animation, VFX, and migration.",
+  "description": "AI agent skills for Bevy 0.19: ECS, rendering, physics, input, assets, audio, accessibility, persistence, testing, profiling, voxels, and migration.",
   "skills": "./skills"
 }

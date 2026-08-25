@@ -141,10 +141,15 @@ Script formats and CI examples are in [tooling](references/tooling.md).
 
 ## See also
 
+- [`bevy-input-actions`](../bevy-input-actions/SKILL.md) — logical actions,
+  remapping, device hot-plug, Steam Deck, and adaptive-controller integration.
+- [`bevy-audio`](../bevy-audio/SKILL.md) — captions/cue boundary, category mixes,
+  spatial limitations, and browser audio startup.
 - [`bevy-ui`](../bevy-ui/SKILL.md) — layout, text, interaction, and focus APIs.
 - [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md) — controller and UI backends.
 - [`bevy-fluent`](../bevy-fluent/SKILL.md) — localized text and captions.
 - [`bevy-cameras`](../bevy-cameras/SKILL.md) — shake, FOV, and viewport controls.
 - [`bevy-physics`](../bevy-physics/SKILL.md) — accessible character movement, aim,
   and timing mechanics built over physics.
-- [`bevy-core-concepts`](../bevy-core-concepts/SKILL.md) — fixed-step input architecture.
+- [`bevy-testing`](../bevy-testing/SKILL.md) — deterministic checks and capture evidence.
+- [`bevy-core-concepts`](../bevy-core-concepts/SKILL.md) — schedule architecture.

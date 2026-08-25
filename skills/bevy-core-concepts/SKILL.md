@@ -104,5 +104,7 @@ struct EntityCount(u32);
 - [`bevy-rendering`](../bevy-rendering/SKILL.md) — render schedules and systems.
 - [`bevy-physics`](../bevy-physics/SKILL.md) — Rapier schedule placement and
   `PhysicsSet` ordering.
+- [`bevy-input-actions`](../bevy-input-actions/SKILL.md) — frame input transfer into fixed ticks.
+- [`bevy-testing`](../bevy-testing/SKILL.md) — controlled `App` stepping and manual time.
 - [`bevy-migration-0-18-to-0-19`](../bevy-migration-0-18-to-0-19/SKILL.md) — executor
   instances and resources-as-components.
