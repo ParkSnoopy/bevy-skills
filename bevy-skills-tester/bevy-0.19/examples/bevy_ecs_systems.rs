@@ -25,6 +25,8 @@ struct GoalScored {
     team: u8,
 }
 
+// Composite param: pass one argument, get four.
+// 'w = world borrow; 's = system-local state borrow.
 #[derive(SystemParam)]
 struct GameCtx<'w, 's> {
     time: Res<'w, Time>,
@@ -42,7 +44,9 @@ fn main() {
             Update,
             (GameLoop::Input, GameLoop::Simulate, GameLoop::Render).chain(),
         )
+        // State schedule: fires once when entering Playing.
         .add_systems(OnEnter(AppState::Playing), spawn_level)
+        // State schedule: fires once when leaving Playing.
         .add_systems(OnExit(AppState::Playing), despawn_level)
         .add_systems(Update, read_input.in_set(GameLoop::Input))
         .add_systems(

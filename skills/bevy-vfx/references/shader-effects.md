@@ -19,8 +19,7 @@ CPU only updates a time uniform. Good candidates:
 ```rust
 use bevy::{
     prelude::*,
-    render::render_resource::AsBindGroup,
-    shader::ShaderRef,
+    render::render_resource::{AsBindGroup, ShaderRef},
 };
 
 #[derive(Asset, AsBindGroup, TypePath, Clone)]
@@ -39,8 +38,8 @@ impl Material for FlickerMaterial {
 }
 ```
 
-> **Migration gotcha — `AsBindGroup::label()` is required.**
-> In 0.17 it had a blanket default implementation. In 0.18 the blanket was removed;
+> **Bevy 0.19 — `AsBindGroup::label()` is required.**
+> Older examples may omit it because the trait formerly supplied a blanket default;
 > you must either derive it (the `#[derive(AsBindGroup)]` macro handles this) or
 > implement it manually. Using `#[derive(AsBindGroup)]` as shown above is the
 > correct path — it generates a `label()` that returns the type name.
@@ -67,7 +66,7 @@ fn update_flicker(
     q: Query<&MeshMaterial3d<FlickerMaterial>>,
 ) {
     for handle in &q {
-        if let Some(mut mat) = materials.get_mut(handle) {
+        if let Some(mat) = materials.get_mut(handle) {
             mat.time = time.elapsed_secs();
         }
     }

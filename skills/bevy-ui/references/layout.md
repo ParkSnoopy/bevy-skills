@@ -1,6 +1,6 @@
-# Bevy 0.18 UI — Layout
+# Bevy 0.19 UI — Layout
 
-UI layout in Bevy 0.18 is Flexbox-driven. Every visible UI entity needs a `Node`
+UI layout in Bevy 0.19 is Flexbox-driven. Every visible UI entity needs a `Node`
 component; the root of the tree is a direct child of the implicit UI root entity.
 
 ## Quick reference

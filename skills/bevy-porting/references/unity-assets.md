@@ -1,10 +1,10 @@
-# bevy-porting — Unity → Bevy 0.18 asset pipeline
+# bevy-porting — Unity → Bevy 0.19 asset pipeline
 
 > Referenced from `bevy-porting/SKILL.md § Unity (priority)`.
 
 ## Concept map
 
-| Unity | Bevy 0.18 |
+| Unity | Bevy 0.19 |
 |---|---|
 | Prefab (visual hierarchy) | glTF scene loaded via `AssetServer` |
 | Prefab (data / spawner) | Rust fn that spawns a `Bundle` |
@@ -17,13 +17,13 @@
 
 ## Prefabs → spawnable entity templates
 
-Unity prefabs are serialised entity hierarchies. Bevy 0.18 has no native "prefab" type. Two idioms:
+Unity prefabs are serialised entity hierarchies. Bevy 0.19 has no native "prefab" type. Two idioms:
 
 **Visual prefab** — bake to glTF (see `unity-scenes-gltf.md`), then load the scene:
 
 ```rust
-let prefab: Handle<Scene> = asset_server.load("prefabs/enemy.glb#Scene0");
-commands.spawn(SceneRoot(prefab));
+let prefab: Handle<WorldAsset> = asset_server.load("prefabs/enemy.glb#Scene0");
+commands.spawn(WorldAssetRoot(prefab));
 ```
 
 **Data prefab / spawner** — a Rust function that builds and returns an entity with the right components:
@@ -65,7 +65,7 @@ Prefer the spawner function for entities that need logic-driven variation; prefe
 Enable the `ktx2` and `zstd` Cargo features:
 
 ```toml
-bevy = { version = "0.18", features = ["ktx2", "zstd"] }
+bevy = { version = "0.19", features = ["ktx2", "zstd"] }
 ```
 
 **sRGB vs Linear:** Unity's "sRGB (Color Texture)" maps to Bevy's default sRGB image format. Normal maps **must be imported as Linear** — Unity marks them automatically; in Bevy you must ensure the asset isn't tagged sRGB. glTFast handles this correctly when exporting from Unity. See `bevy-voxel-data` for KTX2 atlas workflows.
@@ -89,7 +89,7 @@ Addressables **groups** (batching assets for download chunks) map loosely to:
 Hot-reload of changed assets is enabled by adding the `file_watcher` feature:
 
 ```toml
-bevy = { version = "0.18", features = ["file_watcher"] }
+bevy = { version = "0.19", features = ["file_watcher"] }
 ```
 
 ## AssetBundle / SceneAssetBundle

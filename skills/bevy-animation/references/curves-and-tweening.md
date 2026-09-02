@@ -87,12 +87,26 @@ Arguments are `p1` and `p2` control points in the CSS convention (p0 = [0,0], p3
 `UnevenSampleAutoCurve` lives in `bevy::math::curve::sample_curves`. It fits a smooth curve through unevenly-spaced samples, avoiding the linear-interpolation staircase of `AnimatableKeyframeCurve` without requiring manual spline handle placement.
 
 ```rust
-// Illustrative — confirm exact constructor signature in docs.rs/bevy/0.18
-// The type exists; its constructor may require a specific trait bound on T.
-use bevy::math::curve::sample_curves::UnevenSampleAutoCurve;
+use bevy::{
+    math::curve::{sample_curves::UnevenSampleAutoCurve, Curve},
+    prelude::Vec3,
+};
+
+let path = UnevenSampleAutoCurve::new([
+    (0.0_f32, Vec3::ZERO),
+    (0.4, Vec3::new(1.0, 2.0, 0.0)),
+    (1.0, Vec3::new(3.0, 1.0, 0.0)),
+])
+.expect("the hard-coded path must contain at least two finite-time samples");
+
+let position = path.sample_clamped(0.65);
 ```
 
-Prefer `AnimatableKeyframeCurve` when you want linear keyframe control; prefer `UnevenSampleAutoCurve` for smooth motion-capture-style curves with sparse samples.
+The constructor filters non-finite sample times, sorts the remainder, and returns an
+error if fewer than two valid timed samples remain. Sampling requires the value type
+to implement `StableInterpolate`; Bevy vectors and quaternions do. Prefer
+`AnimatableKeyframeCurve` when you want linear keyframe control; prefer
+`UnevenSampleAutoCurve` for stable smooth interpolation between sparse samples.
 
 ## Non-clip tweening: a UI panel scale-up system
 
@@ -137,7 +151,9 @@ This approach runs in `Update`, avoids `AnimationPlayer`, and has no scheduling 
 - `animated_field!` is NOT re-exported from `bevy::prelude`. Always import from `bevy::animation::animated_field`.
 - `AnimatableCurve` and `AnimatableKeyframeCurve` are in `bevy::animation::animation_curves`, not `bevy::animation` directly.
 - `EaseFunction` is in `bevy::math::curve`, not `bevy::animation`.
-- `AnimatableKeyframeCurve::new` panics on unwrap if inputs are invalid — always `.expect()` or `.unwrap_or_else()`.
+- `AnimatableKeyframeCurve::new` returns `Result`. Propagate or report invalid runtime
+  data; use `.expect(...)` only for hard-coded startup data whose validity is an
+  invariant.
 
 ## See also
 

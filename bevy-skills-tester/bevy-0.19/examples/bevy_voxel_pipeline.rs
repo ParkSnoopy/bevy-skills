@@ -5,10 +5,6 @@ use bevy::{
         PrimitiveTopology,
     },
     prelude::*,
-    tasks::{
-        AsyncComputeTaskPool,
-        Task,
-    },
 };
 use block_mesh::{
     GreedyQuadsBuffer,
@@ -22,8 +18,10 @@ use block_mesh::{
         ConstShape3u32,
     },
 };
-use futures_lite::future;
 
+// 18^3 — the standard "chunk plus padding" block-mesh expects.
+// Each axis gets 1 cell of padding on each side so neighbour lookups are
+// in-bounds. The user-visible chunk is 16^3.
 type ChunkShape = ConstShape3u32<18, 18, 18>;
 
 #[derive(Clone, Copy, Eq, PartialEq, Default)]
@@ -41,12 +39,13 @@ impl Voxel for BlockId {
 
 impl MergeVoxel for BlockId {
     type MergeValue = u16;
-
     fn merge_value(&self) -> Self::MergeValue {
         self.0
     }
 }
 
+/// Build a Bevy 0.19 Mesh from a padded chunk of blocks.
+/// Returns `None` for an entirely empty chunk so callers can skip spawning.
 pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
     assert_eq!(blocks.len(), ChunkShape::SIZE as usize);
 
@@ -93,32 +92,6 @@ pub fn mesh_chunk(blocks: &[BlockId]) -> Option<Mesh> {
         .ok()?;
     mesh.insert_indices(Indices::U32(indices));
     Some(mesh)
-}
-
-#[derive(Component)]
-struct MeshTask(Task<Option<Mesh>>);
-
-fn kick(mut commands: Commands) {
-    let pool = AsyncComputeTaskPool::get();
-    let blocks: Vec<crate::BlockId> = Vec::new();
-    let task = pool.spawn(async move { crate::mesh_chunk(&blocks) });
-    commands.spawn(MeshTask(task));
-}
-
-fn poll(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut q: Query<(Entity, &mut MeshTask)>,
-) {
-    for (entity, mut task) in &mut q {
-        if let Some(maybe_mesh) = future::block_on(future::poll_once(&mut task.0)) {
-            commands.entity(entity).remove::<MeshTask>();
-            if let Some(mesh) = maybe_mesh {
-                let handle = meshes.add(mesh);
-                commands.entity(entity).insert(Mesh3d(handle));
-            }
-        }
-    }
 }
 
 fn main() {}

@@ -8,13 +8,13 @@ use bevy::{
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins) // includes InputFocusPlugin in 0.19
         .add_systems(Startup, setup)
-        .add_systems(Update, button_system)
+        .add_systems(Update, style_button)
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(mut commands: Commands, assets: Res<AssetServer>) {
     commands.spawn(Camera2d);
     commands.spawn((
         Node {
@@ -26,63 +26,46 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         },
         children![(
             Button,
+            AccessibleLabel::new("Start game"),
             Node {
-                width: px(150),
-                height: px(65),
-                border: UiRect::all(px(5)),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
+                width: px(180),
+                height: px(64),
+                border: UiRect::all(px(3)),
                 border_radius: BorderRadius::MAX,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
                 ..default()
             },
+            BackgroundColor(Color::srgb(0.12, 0.12, 0.15)),
             BorderColor::all(Color::WHITE),
-            BackgroundColor(Color::BLACK),
             children![(
-                Text::new("Button"),
+                Text::new("Start game"),
                 TextFont {
-                    font: asset_server.load("fonts/FiraSans-Bold.ttf").into(),
-                    font_size: FontSize::Px(33.0),
+                    font: assets.load("fonts/FiraSans-Bold.ttf").into(),
+                    font_size: FontSize::Px(32.0),
                     ..default()
                 },
-                TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                TextShadow::default(),
-            )]
+                TextColor(Color::WHITE),
+            )],
         )],
     ));
 }
 
-fn button_system(
-    mut input_focus: ResMut<InputFocus>,
-    mut query: Query<
-        (
-            Entity,
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &mut Button,
-        ),
-        Changed<Interaction>,
+fn style_button(
+    mut focus: ResMut<InputFocus>,
+    mut buttons: Query<
+        (Entity, &Interaction, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
     >,
 ) {
-    for (entity, interaction, mut bg, mut border, mut button) in &mut query {
-        match *interaction {
+    for (entity, interaction, mut background) in &mut buttons {
+        *background = match interaction {
             Interaction::Pressed => {
-                input_focus.set(entity, FocusCause::Pressed);
-                *bg = BackgroundColor(Color::srgb(0.35, 0.75, 0.35));
-                *border = BorderColor::all(Color::srgb(1.0, 0.0, 0.0));
-                button.set_changed();
+                focus.set(entity, FocusCause::Pressed);
+                BackgroundColor(Color::srgb(0.15, 0.55, 0.25))
             }
-            Interaction::Hovered => {
-                input_focus.set(entity, FocusCause::Navigated);
-                *bg = BackgroundColor(Color::srgb(0.25, 0.25, 0.25));
-                *border = BorderColor::all(Color::WHITE);
-                button.set_changed();
-            }
-            Interaction::None => {
-                input_focus.clear();
-                *bg = BackgroundColor(Color::BLACK);
-                *border = BorderColor::all(Color::BLACK);
-            }
-        }
+            Interaction::Hovered => BackgroundColor(Color::srgb(0.22, 0.22, 0.28)),
+            Interaction::None => BackgroundColor(Color::srgb(0.12, 0.12, 0.15)),
+        };
     }
 }

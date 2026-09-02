@@ -1,6 +1,6 @@
 ---
 name: bevy-ecs-components
-description: Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, writing observers with `On<E>` (NOT `Trigger<E>` — renamed in 0.17), choosing between Table and SparseSet storage, or registering `on_add`/`on_remove` hooks in Bevy 0.19.
+description: Use when defining `#[derive(Component)]`, declaring required components with `#[require(...)]`, writing observers with `On<E>`, choosing Table versus SparseSet storage, registering `on_add`/`on_discard`/`on_remove` hooks, or migrating `Replace` lifecycle events in Bevy 0.19.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -32,8 +32,8 @@ struct Health(f32);
 struct Velocity(Vec3);
 
 // 2. Required components — spawning `Player` auto-spawns the rest.
-//    `#[require]` calls each form: `Type` (Default), `Type::ctor(...)`, or
-//    `Type = expression`.
+//    `#[require]` accepts `Type` (Default), `Type(args)` (tuple constructor),
+//    or `Type = expression`.
 #[derive(Component)]
 #[require(Health = Health(100.0), Velocity = Velocity(Vec3::ZERO), Transform)]
 struct Player;
@@ -82,14 +82,16 @@ fn on_damage(damage: On<Damage>, mut query: Query<&mut Health>) {
 }
 ```
 
-## Gotchas (0.19)
+## Bevy 0.19 gotchas
 
 - **`Trigger<E>` is gone.** Observer params are `On<E>` in 0.17+. Methods: `event()`, `event_mut()`, `observer()`, `original_event_target()`, `propagate(bool)`.
 - **`EntityEvent::set_target`** requires `use bevy::ecs::entity::SetEntityEventTarget;` — not in the prelude.
-- **Storage choice is irrevocable**: it's compiled into the component. SparseSet adds/removes faster but iterates 2–5× slower. Use Table (default) unless profiling proves SparseSet wins.
+- **Storage choice is irrevocable**: it is compiled into the component. SparseSet is designed for frequent insertion/removal; Table is the default and usually iterates faster. Benchmark the real workload before changing storage.
 - **`#[require(T)]` runs `T::default()`**. If `T: !Default`, use `#[require(T = expression)]` or `#[require(T = T::new(...))]`.
-- **Required components are non-recursive at the spec layer** but the spawning machinery does insert transitive requires. If you change a required-component graph, run a full scene reload to catch missing inserts.
-- **Hooks** (`on_add`, `on_insert`, `on_replace`, `on_remove`) are sharp tools — they run inside `World` mutations, can't take arbitrary `SystemParam`s, and can't despawn the entity they fire on. Use observers when you need flexibility.
+- **Required components are recursive.** If `A` requires `B` and `B` requires `C`, inserting `A` also inserts `C`. A constructor specified directly by `A` wins over an inherited constructor; requirement cycles are invalid.
+- **`Replace` became `Discard` in 0.19.** Use hooks `on_add`, `on_insert`, `on_discard`, and `on_remove`; the derive attribute is `#[component(on_discard = path)]`.
+- **Hooks** run inside `World` mutations, cannot take arbitrary `SystemParam`s, and cannot despawn the entity they fire on. Use observers when you need flexibility.
+- **`Resource` is now a `Component` subtrait.** Do not derive both. Each resource value lives as a component on a resource entity, and inserting another value of the same resource type can move which entity owns the singleton; keep ordinary entity components and global resources as distinct types unless that behavior is intentional.
 - **`Bundle` derive still exists** but most use-cases are better served by `#[require(...)]` on a "marker" component, which keeps the spawn surface ergonomic.
 
 ## See also
@@ -97,3 +99,4 @@ fn on_damage(damage: On<Damage>, mut query: Query<&mut Health>) {
 - `bevy-ecs-queries` — reading components back out.
 - `bevy-ecs-systems` — observers are themselves systems.
 - `bevy-migration-0-17-to-0-18` — full `Trigger`→`On` and event→message rename map.
+- `bevy-migration-0-18-to-0-19` — `Discard` lifecycle events and resources-as-components.

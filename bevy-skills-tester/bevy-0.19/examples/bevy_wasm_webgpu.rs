@@ -1,25 +1,17 @@
 use bevy::{
     prelude::*,
-    render::{
-        RenderPlugin,
-        settings::{
-            Backends,
-            WgpuSettings,
-        },
-    },
+    window::WindowPlugin,
 };
 
 fn main() {
     App::new()
-        .add_plugins(
-            DefaultPlugins.set(RenderPlugin {
-                render_creation: WgpuSettings {
-                    backends: Some(Backends::GL),
-                    ..default()
-                }
-                .into(),
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                canvas: Some("#bevy".into()),
+                fit_canvas_to_parent: true,
                 ..default()
             }),
-        )
+            ..default()
+        }))
         .run();
 }

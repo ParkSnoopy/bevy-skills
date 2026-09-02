@@ -16,7 +16,7 @@ discussion synthesis (see [generation](generation.md) and
 | [`fast-surface-nets`](https://crates.io/crates/fast-surface-nets) | Surface nets / dual contouring for smooth voxels (terrain-style). Different paradigm from block-mesh. |
 | [`bevy_meshem`](https://crates.io/crates/bevy_meshem) | Bevy-native meshing plugin; higher-level API wrapping block-mesh concepts. |
 
-See `bevy-voxel-pipeline` skill for the Bevy 0.18 integration pattern that
+See `bevy-voxel-pipeline` skill for the Bevy 0.19 integration pattern that
 connects these crates to `AsyncComputeTaskPool` chunk tasks.
 
 ---

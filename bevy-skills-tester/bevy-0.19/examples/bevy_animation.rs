@@ -24,7 +24,10 @@ fn setup(
     mut clips: ResMut<Assets<AnimationClip>>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
+    // 1. Load a glTF clip
     let walk: Handle<AnimationClip> = asset_server.load("models/character.glb#Animation0");
+
+    // 2. Build a tiny procedural clip with a sample curve + an event
     let bone = AnimationTargetId::from_name(&Name::new("Hips"));
     let tween = AnimatableKeyframeCurve::new([
         (0.0_f32, Vec3::ZERO),
@@ -38,6 +41,7 @@ fn setup(
     proc.add_event(0.5, FootstepEvent { foot: 0 });
     let proc = clips.add(proc);
 
+    // 3. Compose a graph: root → walk + additive(proc, mask=group 0 excluded)
     const MASK_GROUP_0_BIT: u64 = 1 << 0;
     let mut graph = AnimationGraph::new();
     let root = graph.root;
@@ -45,6 +49,7 @@ fn setup(
     let additive = graph.add_additive_blend(0.5, root);
     let _proc_node = graph.add_clip_with_mask(proc, MASK_GROUP_0_BIT, 1.0, additive);
 
+    // 4. Spawn the player entity (bones come from the loaded glTF scene)
     commands.spawn((
         Name::new("AnimationRoot"),
         AnimationPlayer::default(),
@@ -69,14 +74,14 @@ fn start(mut q: Query<(&mut AnimationTransitions, &mut AnimationPlayer), Added<A
 }
 
 fn on_footstep(trigger: On<FootstepEvent>) {
-    let foot = trigger.foot;
-    let _entity = trigger.trigger().target;
+    let foot = trigger.foot; // On<E> derefs to &E
+    let _entity = trigger.trigger().target; // AnimationEventTrigger::target
     let _ = foot;
 }
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins) // gltf_animation is a default feature
         .add_systems(Startup, setup)
         .add_systems(Update, start)
         .add_observer(on_footstep)

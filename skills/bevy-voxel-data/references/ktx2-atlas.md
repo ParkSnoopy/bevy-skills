@@ -98,7 +98,7 @@ supercompression (Zstandard). Enable it explicitly in trimmed WASM builds:
 ```toml
 # Cargo.toml
 [dependencies]
-bevy = { version = "0.19", features = ["ktx2", "zstd_rust"] }
+bevy = { version = "0.19", features = ["ktx2", "zstd"] }
 ```
 
 ---

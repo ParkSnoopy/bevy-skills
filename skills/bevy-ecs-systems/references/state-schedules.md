@@ -91,7 +91,7 @@ the old state and `OnEnter` of the new state fire immediately after.
 
 ## `set` vs `set_if_neq` — the always-fires change
 
-Since Bevy 0.18, calling `next_state.set(S::X)` **always** marks `NextState` as
+In Bevy 0.19, calling `next_state.set(S::X)` **always** marks `NextState` as
 changed, even if `S::X` is already the current state. This means `OnExit` and
 `OnEnter` will fire again unnecessarily.
 

@@ -34,7 +34,7 @@ commands.spawn(...)          // ParticleEffect::new(handle) + Transform + Visibi
 
 ## Why `ParticleEffect` is a bare component
 
-Since 0.18, `ParticleEffectBundle` is removed. `ParticleEffect` itself carries
+`ParticleEffectBundle` has been removed. `ParticleEffect` itself carries
 `#[require(CompiledParticleEffect, Transform, Visibility, VisibilityClass, SyncToRenderWorld)]`,
 so Bevy's required-components system inserts those six components automatically. You only
 need to provide the ones where you want non-default values:

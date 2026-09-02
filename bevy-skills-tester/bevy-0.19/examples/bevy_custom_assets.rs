@@ -16,10 +16,10 @@ use thiserror::Error;
 pub struct LevelDef {
     pub name: String,
     pub gravity: f32,
-    pub thumbnail: String,
+    pub thumbnail: String, // path to a referenced texture asset
 }
 
-#[derive(TypePath)]
+#[derive(TypePath)] // 0.18: required on the loader itself.
 pub struct LevelLoader;
 
 #[derive(Debug, Error)]
@@ -41,10 +41,15 @@ impl AssetLoader for LevelLoader {
         _settings: &Self::Settings,
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
+        // Pull the whole file. For very large files prefer `seekable()`.
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes).await?;
         let level: LevelDef = ron::de::from_bytes(&bytes)?;
-        let _: Handle<Image> = load_context.load(&level.thumbnail);
+
+        // Pull in a referenced asset so it loads alongside this one.
+        // The resulting handle ends up tracked as a dependency.
+        let _: Handle<Image> = load_context.load_builder().load(level.thumbnail.clone());
+
         Ok(level)
     }
 
@@ -54,7 +59,6 @@ impl AssetLoader for LevelLoader {
 }
 
 pub struct LevelLoaderPlugin;
-
 impl Plugin for LevelLoaderPlugin {
     fn build(&self, app: &mut App) {
         app.init_asset::<LevelDef>()
@@ -62,16 +66,4 @@ impl Plugin for LevelLoaderPlugin {
     }
 }
 
-async fn seekable_reader(reader: &mut dyn Reader) -> std::io::Result<()> {
-    match reader.seekable() {
-        Ok(seekable) => {
-            let _ = seekable;
-        }
-        Err(_) => {}
-    }
-    Ok(())
-}
-
-fn main() {
-    App::new().add_plugins(LevelLoaderPlugin).run();
-}
+fn main() {}

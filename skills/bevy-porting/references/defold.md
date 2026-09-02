@@ -1,4 +1,4 @@
-# bevy-porting — Defold → Bevy 0.18
+# bevy-porting — Defold → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Engine coverage`.
 
@@ -6,7 +6,7 @@ Defold is a Lua-scripted 2D-first engine (limited 3D). Game objects (`.go`) carr
 
 ## Concept map
 
-| Defold | Bevy 0.18 |
+| Defold | Bevy 0.19 |
 |---|---|
 | Game object (`.go`) | `Entity` + `Bundle` |
 | `script` component (Lua behaviour) | `System` functions |
@@ -14,7 +14,7 @@ Defold is a Lua-scripted 2D-first engine (limited 3D). Game objects (`.go`) carr
 | `tilemap` component | `bevy_ecs_tilemap` (community crate) |
 | `factory` component (spawner) | spawn function called from a system |
 | `collisionobject` | `bevy_rapier2d` collider or `avian2d` |
-| `.collection` (scene hierarchy) | spawn function or `DynamicScene` |
+| `.collection` (scene hierarchy) | spawn function or `DynamicWorld` |
 | `go.property("speed", 100)` | `#[derive(Component)] struct Speed(pub f32)` |
 | Camera (orthographic 2D) | `Camera2d` |
 
@@ -39,12 +39,12 @@ fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
 
 ## Lua lifecycle → Bevy schedules
 
-| Defold (Lua) | Bevy 0.18 |
+| Defold (Lua) | Bevy 0.19 |
 |---|---|
 | `init(self)` | `Startup` system |
 | `update(self, dt)` | `Update` system + `Res<Time>` |
 | `on_message(self, msg_id, msg, sender)` | message handler system (see below) |
-| `final(self)` | `On<Remove<C>>` observer |
+| `final(self)` | `On<Remove, C>` observer |
 
 ```rust
 // Defold: function update(self, dt)  self.pos.x = self.pos.x + self.speed * dt  end
@@ -55,28 +55,28 @@ fn move_player(mut query: Query<(&Speed, &mut Transform), With<Player>>, time: R
 }
 ```
 
-## Message passing → Bevy messages / events
+## Message passing → Bevy messages
 
-Defold's `msg.post` / `on_message` is similar to Bevy 0.18's typed message system. Map each Defold message hash to a Rust type:
+Defold's `msg.post` / `on_message` is similar to Bevy 0.19's typed message system. Map each Defold message hash to a Rust type:
 
 ```rust
 // Defold: msg.post(".", hash("walk"), { dir = 1 })
-#[derive(Event)]
+#[derive(Message)]
 struct WalkRequest { dir: f32 }
 
-fn send_walk(mut writer: EventWriter<WalkRequest>, input: Res<ButtonInput<KeyCode>>) {
+fn send_walk(mut writer: MessageWriter<WalkRequest>, input: Res<ButtonInput<KeyCode>>) {
     if input.pressed(KeyCode::ArrowRight) {
-        writer.send(WalkRequest { dir: 1.0 });
+        writer.write(WalkRequest { dir: 1.0 });
     }
 }
-fn handle_walk(mut events: EventReader<WalkRequest>, mut query: Query<&mut Transform, With<Player>>) {
+fn handle_walk(mut events: MessageReader<WalkRequest>, mut query: Query<&mut Transform, With<Player>>) {
     for ev in events.read() {
         for mut tf in &mut query { tf.translation.x += ev.dir * 4.0; }
     }
 }
 ```
 
-Cross-link: **`bevy-ecs-systems`** (event and observer patterns).
+Cross-link: **`bevy-ecs-systems`** (message and observer patterns).
 
 ## Collections → scene composition
 
@@ -84,7 +84,7 @@ Defold collections nest game objects and sub-collections. Bevy equivalents:
 
 - **Spawn function** — a regular Rust `fn` that calls `commands.spawn(...)` for each object; cleanest for code-first ports.
 - **glTF** — export visual geometry from Defold (via FBX/OBJ intermediate); load with `bevy_gltf`.
-- **`DynamicScene`** — serialisable ECS snapshot; use when you want round-trippable scene data.
+- **`DynamicWorld`** from `bevy_world_serialization` — serialisable ECS snapshot for round-trippable scene data.
 
 ## Sprite atlases (`.atlas`)
 
@@ -110,7 +110,11 @@ commands.spawn((ActorProps { speed: 100.0, jump_force: 400.0 }, ...));
 
 ## Input
 
-Defold input-binding files map device inputs to action hashes. Bevy equivalent: `Res<ButtonInput<KeyCode>>` + `Res<ButtonInput<GamepadButton>>`. For rebindable actions consider **`leafwing-input-manager`** (community crate — also mentioned in `unity-input.md`).
+Defold input-binding files map device inputs to action hashes. Bevy keyboard input is
+`Res<ButtonInput<KeyCode>>`; in 0.19, gamepads are entities, so query `&Gamepad`
+instead of reading a global `ButtonInput<GamepadButton>`. For rebindable actions,
+consider **`leafwing-input-manager 0.21`** and build accessible binding UI and
+persistence on top (also see `unity-input.md` and `bevy-a11y`).
 
 ## Parsing `.go` / `.collection` files (inline recipe)
 
@@ -127,7 +131,7 @@ No script is bundled for Defold because the workflow is mostly editing rather th
 
 ## Build / deploy
 
-| Defold | Bevy 0.18 |
+| Defold | Bevy 0.19 |
 |---|---|
 | `bob.jar` build CLI | `cargo build --release --target <triple>` |
 | HTML5 export | `wasm32-unknown-unknown` + `wasm-bindgen` |

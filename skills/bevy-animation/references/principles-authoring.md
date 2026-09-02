@@ -77,7 +77,7 @@ Bevy faithfully renders what you give it. However, the rendering setup does matt
   `StandardMaterial::emissive` — see the `bevy-pbr-materials` skill for material
   setup.
 - **Subsurface scattering** (skin, foliage) affects how light wraps around a character.
-  In Bevy 0.18, SSS is approximated; check `bevy-pbr-materials` for the available
+  In Bevy 0.19, SSS is approximated; check `bevy-pbr-materials` for the available
   shading model parameters.
 - **Pose hierarchy:** the most appealing poses have a clear primary line of action
   running through the whole body, with secondary curves counterpointing it. Author

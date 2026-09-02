@@ -4,7 +4,7 @@
 
 ## Architecture difference
 
-| Unity | Bevy 0.18 |
+| Unity | Bevy 0.19 |
 |---|---|
 | `AudioSource` component on a GameObject | `AudioPlayer` component on an entity |
 | `AudioClip` asset | `Handle<AudioSource>` (asset; the name is overloaded — `bevy::audio::AudioSource` is the *asset*, not the player) |
@@ -118,7 +118,7 @@ See [`bevy-animation/references/curves-and-tweening.md`](../../bevy-animation/re
 - **`AudioSource` naming collision.** `bevy::audio::AudioSource` is an asset (loaded from disk). The playback component is `AudioPlayer`. Searching for `AudioSource` in autocomplete will find the wrong type.
 - **Spatial audio requires `Transform` on the emitter entity.** Without `Transform`, `SpatialListener` distance calculations produce silent output.
 - **`SpatialListener` is optional.** If no entity has `SpatialListener`, Bevy falls back to the primary camera's transform. Attach `SpatialListener` explicitly for VR / split-screen setups.
-- **No rolloff curves.** Bevy 0.18 uses inverse-distance only. Custom falloff = user system reading listener distance and calling `AudioSink::set_volume(Volume::new(…))` each frame.
+- **No rolloff curves.** Bevy 0.19 uses inverse-distance only. Custom falloff = user system reading listener distance and calling `AudioSink::set_volume(Volume::new(…))` each frame.
 - **`PlaybackSettings::DESPAWN` removes the entity.** Do not hold a strong `Handle<AudioSource>` only in the entity's `AudioPlayer` if you rely on the asset staying loaded — keep a copy elsewhere.
 
 ## See also

@@ -4,7 +4,8 @@
 
 ## Feature flags
 
-`bevy_hanabi = "0.19.0"` ships **six** Cargo features. Both `2d` and `3d` are enabled
+`bevy_hanabi = "0.19.0"` ships `2d`, `3d`, `gpu_tests`, and `trace` features. Both
+`2d` and `3d` are enabled
 by default:
 
 ```toml
@@ -145,8 +146,8 @@ majority of VFX use cases.
 ## Sprite-sheet alternative (non-hanabi)
 
 For sprite-flipbook explosions that are *not* GPU particle systems, see the
-`non-hanabi-vfx` reference (Author B's file) for the `bevy_spritesheet_animation`
-approach, which operates on ordinary `Sprite` entities.
+[`non-hanabi-vfx`](non-hanabi-vfx.md) reference for the
+`bevy_spritesheet_animation` approach, which operates on ordinary `Sprite` entities.
 
 ## See also
 

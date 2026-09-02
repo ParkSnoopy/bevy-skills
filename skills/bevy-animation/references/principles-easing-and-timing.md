@@ -2,7 +2,7 @@
 
 > Referenced from `bevy-animation/SKILL.md § The 12 Basic Principles`.
 
-These three principles all live in *time*. In Bevy 0.18 they map to `EaseFunction`,
+These three principles all live in *time*. In Bevy 0.19 they map to `EaseFunction`,
 clip duration / playback speed, and the build-up beat at the start of a keyframe
 sequence.
 
@@ -55,7 +55,7 @@ Timing is the total duration of an action — how many frames/seconds it lasts. 
 timing reads as lighter or more urgent; slower timing reads as heavier or more
 deliberate.
 
-In Bevy 0.18, clip duration is determined at authoring time (in Blender/Maya or when
+In Bevy 0.19, clip duration is determined at authoring time (in Blender/Maya or when
 you build `AnimationClip` in code). At runtime you adjust it with playback speed:
 
 ```rust

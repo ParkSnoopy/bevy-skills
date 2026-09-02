@@ -1,4 +1,4 @@
-# bevy-porting — Unity scenes → glTF → Bevy 0.18
+# bevy-porting — Unity scenes → glTF → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Unity (priority)`.
 
@@ -8,7 +8,7 @@ Unity's `.unity` scene format is YAML but encodes engine-internal instance IDs (
 
 The cleanest port path: **export to glTF 2.0, load natively in Bevy.**
 
-Bevy's `bevy_gltf` crate (included in `DefaultPlugins`) loads `.glb` / `.gltf` files directly. The loaded asset is a `Handle<Scene>` spawnable with `SceneRoot`. Animations, PBR materials, bone hierarchies, and mesh LODs all survive the roundtrip if the exporter is correct.
+Bevy's `bevy_gltf` crate (included in `DefaultPlugins`) loads `.glb` / `.gltf` files directly. In 0.19 the loaded scene is a `Handle<WorldAsset>` spawnable with `WorldAssetRoot`. Animations, PBR materials, bone hierarchies, and mesh LODs survive when the exporter preserves them.
 
 ## Tooling options
 
@@ -27,8 +27,8 @@ For the FBX path: export FBX from Unity, import into Blender, verify the axis an
 ```rust
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Load the root scene from a .glb
-    let scene: Handle<Scene> = asset_server.load("scenes/main.glb#Scene0");
-    commands.spawn(SceneRoot(scene));
+    let scene: Handle<WorldAsset> = asset_server.load("scenes/main.glb#Scene0");
+    commands.spawn(WorldAssetRoot(scene));
 }
 ```
 
@@ -69,7 +69,7 @@ If you see mirroring, apply `Transform { scale: Vec3::new(-1.0, 1.0, 1.0), .. }`
 
 Unity baked lightmaps (Enlighten / Progressive Lightmapper) are stored in a proprietary format that does not transfer to Bevy.
 
-Bevy 0.18 supports baked lightmaps via the `Lightmap` component, but the bake format is incompatible — you cannot reuse Unity's `.exr` lightmap atlases directly.
+Bevy 0.19 supports baked lightmaps via the `Lightmap` component, but the bake format is incompatible — you cannot reuse Unity's `.exr` lightmap atlases directly.
 
 **Recommendation for porting:** start with real-time lighting (`DirectionalLight`, `PointLight`) to unblock development. Schedule a Bevy-native lightmap bake later once the scene geometry is stable.
 

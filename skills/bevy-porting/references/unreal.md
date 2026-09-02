@@ -1,10 +1,10 @@
-# bevy-porting — Unreal Engine 5 → Bevy 0.18
+# bevy-porting — Unreal Engine 5 → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Engine coverage`.
 
 ## Concept map
 
-| Unreal Engine 5 | Bevy 0.18 |
+| Unreal Engine 5 | Bevy 0.19 |
 |---|---|
 | `AActor` | `Entity` + a bundle of `Component`s |
 | `UActorComponent` | Single `#[derive(Component)]` struct |
@@ -20,16 +20,17 @@ Most exporters handle the conversion — spot-check with an asymmetric asset.
 
 ## Lifecycle hooks
 
-| Unreal | Bevy 0.18 |
+| Unreal | Bevy 0.19 |
 |---|---|
 | `BeginPlay()` | `Startup` schedule system or `Added<C>` query filter |
 | `Tick(float DeltaTime)` | `Update` system with `time: Res<Time>` → `time.delta_secs()` |
-| `EndPlay(EEndPlayReason)` | `OnRemove` observer: `On<Remove<C>>` |
+| `EndPlay(EEndPlayReason)` | removal observer: `On<Remove, C>` |
 
 ```rust
 // BeginPlay equivalent — runs once when the component is added
-fn on_actor_added(trigger: Trigger<OnAdd, MyActor>, mut commands: Commands) {
+fn on_actor_added(add: On<Add, MyActor>, mut commands: Commands) {
     // initialise state
+    let _entity = add.entity;
 }
 
 // Tick equivalent
@@ -59,7 +60,9 @@ impl Plugin for SavePlugin {
 
 ## Blueprints → Rust systems
 
-Blueprints compile to bytecode and have no Bevy equivalent. Port gameplay logic as free Rust `fn`s added to a schedule. Editor tooling from Blueprints is out of scope — Bevy's editor (`bevy_editor`) is under active development and not stable in 0.18.
+Blueprints compile to bytecode and have no Bevy equivalent. Port gameplay logic as
+free Rust `fn`s added to a schedule. Bevy 0.19 does not ship an Unreal-equivalent
+integrated visual scripting/editor workflow; evaluate external tools separately.
 
 ## UMG UI → `bevy_ui`
 
@@ -71,13 +74,13 @@ Unreal's Material Editor compiles node graphs to HLSL. Bevy equivalents:
 
 - **PBR basics** → `StandardMaterial` (metallic/roughness workflow, same as UE5 defaults).
 - **Custom node graph** → write a custom `Material` impl with WGSL shaders.
-- **Subsurface, anisotropy, clearcoat** — no 1:1 Bevy 0.18 built-in; requires a custom material.
+- **Subsurface, anisotropy, clearcoat** — no 1:1 Bevy 0.19 built-in; requires a custom material.
 
 Cross-link: **`bevy-pbr-materials`**.
 
 ## Animation Blueprint / State Machine → `AnimationGraph`
 
-| Unreal | Bevy 0.18 |
+| Unreal | Bevy 0.19 |
 |---|---|
 | `Animation Blueprint` | `AnimationGraph` asset |
 | State machine layer | `AnimationTransitions` + state-driving system |
@@ -88,7 +91,7 @@ Export skeletal meshes to glTF (via Datasmith or the built-in glTF Exporter plug
 
 ## Niagara / Cascade VFX
 
-Bevy 0.18 has no built-in GPU particle system equivalent to Niagara. The community crate **`bevy_hanabi`** provides GPU particle graphs and covers most Cascade / Niagara use cases.
+Bevy 0.19 has no built-in GPU particle system equivalent to Niagara. The community crate **`bevy_hanabi`** provides GPU particle graphs and covers most Cascade / Niagara use cases.
 
 ## Level export (`.umap`)
 
@@ -104,11 +107,11 @@ Use **`scripts/unreal/ue5_python_export.py`** (drop into `<Project>/Content/Pyth
 
 ## Build pipeline
 
-| Unreal | Bevy 0.18 |
+| Unreal | Bevy 0.19 |
 |---|---|
 | Package Project (per-platform) | `cargo build --target <triple>` |
 | `DefaultEngine.ini` feature switches | `Cargo.toml` `[features]` |
-| PS5 / Xbox / Switch | Not supported in Bevy 0.18 |
+| Closed consoles | Requires licensed platform SDK access and platform-specific ports; not part of Bevy's public desktop/mobile toolchain |
 
 Cross-link: **`bevy-cargo-features`**.
 
@@ -118,7 +121,8 @@ Cross-link: **`bevy-cargo-features`**.
 - Unreal's FName string pool has no Bevy equivalent — use path handles or marker components.
 - `PlayerController` possession / unpossession is a pure design pattern in Bevy; implement with a marker component + a query filter.
 - Blueprint-only projects have zero direct code to port; budget extra time for logic reconstruction.
-- Subsurface scattering and complex shading models require custom WGSL — not available out-of-the-box in 0.18.
+- Specialized subsurface and complex shading models may require custom WGSL or a
+  renderer extension; validate the exact Bevy 0.19 `StandardMaterial` feature set.
 
 ## See also
 

@@ -1,12 +1,9 @@
-use bevy::{
-    asset::AssetPath,
-    prelude::*,
-    world_serialization::WorldAsset,
-};
+use bevy::prelude::*;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(AssetPlugin {
+            // Hot-reload on file change — dev-only.
             watch_for_changes_override: Some(true),
             ..default()
         }))
@@ -23,6 +20,7 @@ struct MyHandles {
 }
 
 fn load_handles(asset_server: Res<AssetServer>, mut handles: ResMut<MyHandles>) {
+    // GLTF scenes are addressed by sub-asset label.
     handles.hero = asset_server.load("models/hero.glb#Scene0");
     handles.bricks = asset_server.load("textures/bricks.png");
 }
@@ -34,20 +32,5 @@ fn react_to_loads(mut ev: MessageReader<AssetEvent<Image>>, images: Res<Assets<I
                 info!("image loaded: {}x{}", img.width(), img.height());
             }
         }
-    }
-}
-
-fn asset_paths() {
-    let path = AssetPath::from("textures/bricks.png");
-    let path_with_label = AssetPath::from("models/hero.glb").with_label("Scene0");
-    let _ = path;
-    let _ = path_with_label;
-}
-
-fn check_ready(asset_server: Res<AssetServer>, handles: Res<MyHandles>) {
-    use bevy::asset::LoadState;
-
-    if matches!(asset_server.load_state(&handles.hero), LoadState::Loaded) {
-        let _ = &handles.hero;
     }
 }

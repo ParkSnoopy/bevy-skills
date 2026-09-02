@@ -31,6 +31,7 @@ fn apply_gravity(_t: Res<Time>) {}
 fn simulate_physics(_t: Res<Time<Fixed>>) {}
 fn sync_transforms(_q: Query<&mut Transform>) {}
 
+// Exclusive system — full mutable World access, runs alone.
 fn rebuild_index(world: &mut World) {
     let count = world.entities().len();
     world.insert_resource(EntityCount(count));

@@ -1,10 +1,10 @@
-# bevy-porting — Unity → Bevy 0.18 architecture
+# bevy-porting — Unity → Bevy 0.19 architecture
 
 > Referenced from `bevy-porting/SKILL.md § Unity (priority)`.
 
 ## Concept map
 
-| Unity | Bevy 0.18 |
+| Unity | Bevy 0.19 |
 |---|---|
 | `GameObject` | `Entity` |
 | `Transform` (with parent link) | `Transform` + `ChildOf` component |
@@ -17,7 +17,7 @@
 
 ## GameObject + Transform hierarchy → Entity + `ChildOf`
 
-In Bevy 0.18, parent-child relationships are expressed by inserting the `ChildOf` component on the child entity. There is no separate "hierarchy field" on `Transform`.
+In Bevy 0.19, parent-child relationships are expressed by inserting the `ChildOf` component on the child entity. There is no separate "hierarchy field" on `Transform`.
 
 ```rust
 commands.entity(child).insert(ChildOf(parent));
@@ -153,7 +153,9 @@ fn play_sfx(audio: Res<AudioManager>) { ... }
 
 ## Editor scripts (`[ExecuteInEditMode]`, `[CustomEditor]`)
 
-Bevy's editor story (`bevy_editor`) is under active development and not stable in 0.18. Skip porting editor-only code for now; implement runtime equivalents where needed.
+Bevy 0.19 does not ship a Unity-equivalent integrated editor workflow. Evaluate
+current third-party tools independently; keep editor-only Unity code out of runtime
+ports unless the Bevy project has chosen and owns a replacement toolchain.
 
 ## See also
 

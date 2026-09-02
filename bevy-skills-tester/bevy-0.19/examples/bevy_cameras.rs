@@ -5,25 +5,26 @@ use bevy::{
         FreeCamera,
         FreeCameraPlugin,
     },
-    light::GlobalAmbientLight,
     prelude::*,
 };
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(FreeCameraPlugin)
+        .add_plugins(FreeCameraPlugin) // adds the input wiring
         .add_systems(Startup, setup)
         .run();
 }
 
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
+    // 1. Main camera with the built-in free-look controller.
     commands.spawn((
         Camera3d::default(),
         FreeCamera::default(),
         Transform::from_xyz(0.0, 4.0, 8.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
+    // 2. A texture target for an off-screen render pass (mini-map, portal).
     let size = bevy::render::render_resource::Extent3d {
         width: 512,
         height: 512,
@@ -41,38 +42,15 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         | bevy::render::render_resource::TextureUsages::RENDER_ATTACHMENT;
     let image_handle = images.add(image);
 
+    // 3. A second camera that draws into the texture.
+    //    RenderTarget is now a *separate* component, not Camera.target.
     commands.spawn((
         Camera3d::default(),
         Camera {
             order: -1,
             ..default()
-        },
+        }, // -1 = render before the main camera
         RenderTarget::Image(image_handle.into()),
         Transform::from_xyz(10.0, 5.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
-}
-
-fn projections(mut commands: Commands) {
-    commands.spawn((Camera3d::default(), Projection::default()));
-    commands.spawn((
-        Camera3d::default(),
-        Projection::Orthographic(OrthographicProjection {
-            scale: 10.0,
-            ..OrthographicProjection::default_3d()
-        }),
-    ));
-}
-
-fn ambient_light(app: &mut App, mut commands: Commands) {
-    app.insert_resource(GlobalAmbientLight {
-        brightness: 200.0,
-        ..default()
-    });
-    commands.spawn((
-        Camera3d::default(),
-        AmbientLight {
-            brightness: 1000.0,
-            ..default()
-        },
     ));
 }

@@ -39,7 +39,7 @@ my-game/
 │   └── locales/
 │       ├── en/
 │       │   └── ui.ftl
-│       └── ko/
+│       └── fr/
 │           └── ui.ftl
 └── src/
     ├── lib.rs     ← types + plugin builder live here

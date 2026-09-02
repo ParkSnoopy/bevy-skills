@@ -23,7 +23,7 @@ metadata:
 
 ## Canonical end-to-end pattern
 
-This pattern targets `bevy = "0.19"`.
+Verified against `bevy = "0.19"` — `cargo check` clean in `bevy-skills-tester/skill-snippets/examples/bevy_animation.rs`.
 
 ```rust
 use core::time::Duration;
@@ -144,16 +144,22 @@ The four `principles-*.md` references group Thomas & Johnston's twelve principle
 
 ## Gotchas
 
-- **0.17 → 0.18 split.** `AnimationTarget { id, player }` no longer exists. It's now two separate components on each bone entity: `AnimationTargetId(Uuid)` + `AnimatedBy(Entity)`. The glTF loader spawns these for you.
-- **`gltf_animation` is on by default.** No opt-in is needed unless you ran `default-features = false`.
+- **Target components are split.** `AnimationTarget { id, player }` no longer exists.
+  Bone entities use `AnimationTargetId(Uuid)` plus `AnimatedBy(Entity)`; the glTF
+  loader supplies both.
+- **Regenerate persisted target IDs.** Bevy 0.19 changed the
+  `AnimationTargetId` calculation algorithm. Serialized target IDs from 0.18 must be
+  recalculated from the hierarchy/name path.
+- **`gltf_animation` is on by default.** It's already in `bevy = "0.19"`'s default features — no opt-in needed unless you ran `default-features = false`.
 - **`AnimationTransitions::play_with_transition` does NOT exist.** The real and only method is `play(&mut self, player, node, Duration) -> &mut ActiveAnimation`. Chain `.set_repeat(RepeatAnimation::Forever)` / `.set_speed(f32)` on the returned value.
 - **`animated_field!` and `AnimatableCurve` are not in the prelude.** Import explicitly from `bevy::animation::{animated_field, animation_curves::{AnimatableCurve, AnimatableKeyframeCurve}}`.
 - **`On<AnimationEvent>` is not an `EntityEvent` observer.** `On<E>` derefs to `&E` (access event fields directly). The firing entity is at `trigger.trigger().target` (the `AnimationEventTrigger::target` field renamed from `animation_player` in 0.18). `.target()` is not available — that's for `EntityEvent`s.
 - **`Name` is required on bone entities** for `AnimationTargetId::from_name(&Name)` to resolve. The glTF loader sets this; hand-built skeletons must too.
-- **Regenerate serialized target IDs.** Runtime `AnimationTargetId::from_name` / `from_iter` calls remain valid, but 0.19 changed target-ID hashing. Serialized raw IDs from older releases must be regenerated.
 - **`AnimationMask` bit polarity.** A bit set in a node's `u64` mask means that node will *not* animate targets in that group. Register a bone into a group via `graph.add_target_to_mask_group(target_id, group_u32)`. To restrict a node to a single group, set every bit *except* that group's.
 - **Schedule.** Bevy's animation systems run in `PostUpdate`, chained `.before(TransformSystems::Propagate)`. Procedural systems that also write `Transform` should run in `Update` or order explicitly relative to `AnimationSystems` in `PostUpdate`.
-- **Out of scope in core animation.** No built-in IK, morph-target/blend-shape animation isn't first-class, particle/FX systems are separate, `KHR_animation_pointer` glTF extension is unsupported — see [`references/gltf-import.md`](references/gltf-import.md).
+- **Out of scope in core animation.** No built-in IK, particle/FX systems are
+  separate, and the glTF loader does not implement `KHR_animation_pointer` — see
+  [`references/gltf-import.md`](references/gltf-import.md).
 
 ## See also
 
@@ -162,3 +168,4 @@ The four `principles-*.md` references group Thomas & Johnston's twelve principle
 - `bevy-ecs-systems` — observer wiring patterns (`On<E>`, `add_observer`) used for `AnimationEvent`s.
 - `bevy-pbr-materials` — material-parameter animation via `AnimatableCurve` targeting `StandardMaterial` fields (emissive flicker, alpha fades).
 - `bevy-custom-assets` — `AssetLoader` patterns if you serialise `AnimationGraph` to RON (`.animgraph.ron`) and load it as an asset.
+- `bevy-migration-0-18-to-0-19` — persisted target-ID and morph-target asset changes.

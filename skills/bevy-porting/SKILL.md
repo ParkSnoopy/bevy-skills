@@ -1,20 +1,20 @@
 ---
 name: bevy-porting
-description: Use when porting a game project to Bevy 0.18 from another engine — Unity (Prefab, MonoBehaviour, Animator, UGUI), Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker — and need a mapping of each engine's primitives to Bevy equivalents, plus inventory/extraction scripts to pull assets out of the source project.
+description: Use when porting a game project to Bevy 0.19 from another engine — Unity (Prefab, MonoBehaviour, Animator, UGUI), Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker — and need a mapping of each engine's primitives to Bevy equivalents, plus inventory/extraction scripts to pull assets out of the source project.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
   tier: "4"
   area: porting
-  bevy_version: "0.18"
+  bevy_version: "0.19"
 ---
 
-# Bevy 0.18 — Porting from other engines
+# Bevy 0.19 — Porting from other engines
 
 ## When to use this skill
 
-- Starting a port of an existing game from Unity, Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker into Bevy 0.18.
-- Evaluating feasibility — does my engine's feature X have a Bevy equivalent in 0.18?
+- Starting a port of an existing game from Unity, Unreal, Godot, Cocos, vanilla JavaScript / Phaser, Flash/SWF, Defold, Roblox, or GameMaker into Bevy 0.19.
+- Evaluating feasibility — does my engine's feature X have a Bevy 0.19 equivalent?
 - Deciding which subsystem to port first (we recommend: rendering + a single playable slice).
 - Extracting asset and scene data **from the source engine's project tree without needing the source engine installed** — see the `scripts/` policy below.
 - Replacing engine-specific build pipelines (Unity Build Settings, Unreal Build Configuration, etc.) with `cargo` + `Cargo.toml` features.
@@ -42,7 +42,7 @@ Unity is the deepest-covered engine. The eight subsystem references and four ext
 |---|---|---|
 | Architecture (GameObject, MonoBehaviour, ScriptableObject, coroutines) | [references/unity-architecture.md](references/unity-architecture.md) | `Entity` + `ChildOf`, `Component` + `System`, `Asset`/`Resource`, async tasks |
 | Asset pipeline (Prefab, Material, Addressables, GUIDs) | [references/unity-assets.md](references/unity-assets.md) | `Bundle`/spawn fn, `StandardMaterial`, `AssetServer` + `Handle<T>` |
-| Scene → glTF extraction | [references/unity-scenes-gltf.md](references/unity-scenes-gltf.md) | `bevy_gltf`, `DynamicScene`, glTFast / Blender bridge |
+| Scene → glTF extraction | [references/unity-scenes-gltf.md](references/unity-scenes-gltf.md) | `bevy_gltf`, `WorldAssetRoot`, glTFast / Blender bridge |
 | Animator / Mecanim | [references/unity-animation.md](references/unity-animation.md) | `AnimationGraph`, `AnimationTransitions::play`, `#[derive(AnimationEvent)]` |
 | Input System | [references/unity-input.md](references/unity-input.md) | `ButtonInput`, `Axis`, `Touches`, `Gamepad*` |
 | UGUI / UI Toolkit | [references/unity-ui.md](references/unity-ui.md) | `Node`, `BackgroundColor`, `BorderColor`, Taffy/flex |
@@ -67,7 +67,12 @@ These show up regardless of source engine:
 1. **The ECS shift.** Engines other than Bevy mostly use a scene-graph + scripts model (one class = data + behaviour on one node). Bevy is data-oriented: data lives in `Component`s, behaviour in free `fn` `System`s. Don't try to recreate `MonoBehaviour` / `Actor` / `Node` as one Rust struct; split it.
 2. **Port the smallest playable slice first.** A single character moving in a single scene with one input + one animation. Once that compiles and runs, the rest is iteration. Avoid trying to "port everything in parallel."
 3. **Asset pipelines are the long pole.** Code ports faster than assets. Schedule asset extraction first; have a content pipeline producing glTF + KTX2 + audio formats before you start writing gameplay code.
-4. **Fixed-timestep mindset.** Most engines hide the variable-vs-fixed timestep choice. Bevy makes it explicit: physics in `FixedUpdate`, rendering in `Update`, interpolation via `Time<Fixed>`. Decide early which systems live where — see `bevy-core-concepts` and `bevy-animation/references/procedural-animation.md`.
+4. **Fixed-timestep mindset.** Most engines hide the variable-vs-fixed timestep
+   choice. Bevy makes it explicit: deterministic simulation belongs in
+   `FixedUpdate`, frame-driven main-world presentation belongs in `Update`, and
+   renderer work belongs in render schedules. Interpolate with `Time<Fixed>`.
+   Decide early which systems live where — see `bevy-core-concepts` and
+   `bevy-animation/references/procedural-animation.md`.
 5. **Coordinate-system flips.** Unity is left-handed Y-up; Unreal is left-handed Z-up; Godot is right-handed Y-up; Bevy is right-handed Y-up (matches glTF). Most exporters handle the flip; spot-check by importing a scene with a known-asymmetric directional asset and confirming it isn't mirrored.
 
 ## Scripts policy
@@ -87,15 +92,20 @@ These show up regardless of source engine:
 - **Coordinate-system flips silent-fail.** Most exporters handle them, but always spot-check.
 - **Editor scripts are out of scope.** Unity `[CustomEditor]`, Unreal Blueprints' editor tooling, Godot tool scripts — none translate. Bevy's editor story is in flux; for porting, runtime-only.
 - **Don't replicate engine-internal IDs.** Unity GUIDs, Unreal FNames, Godot RIDs, Roblox InstanceIDs — these are sidecar metadata only useful during extraction. Bevy uses path-based handles and ECS entity IDs.
+- **Pin physics integrations to Bevy 0.19.** Current compatible lines are
+  `bevy_rapier2d`/`bevy_rapier3d 0.36` and `avian2d`/`avian3d 0.7`.
+  Physics is separate from rendering; see `bevy-rendering` before choosing
+  headless or debug-render features.
 
 ## See also
 
-Sibling skills default to 0.19; do not copy their version-specific snippets into an 0.18 port.
-
-- [`bevy`](../bevy/SKILL.md) — router; identifies this skill as a Bevy 0.18 compatibility exception.
+- [`bevy`](../bevy/SKILL.md) — router; pins Bevy 0.19 and indexes every sibling skill.
 - [`bevy-animation`](../bevy-animation/SKILL.md) — `AnimationGraph`, `AnimationTransitions`, `#[derive(AnimationEvent)]`. Cross-linked from `unity-animation.md`.
 - [`bevy-ui`](../bevy-ui/SKILL.md) — `Node` + Taffy/flex model. Cross-linked from `unity-ui.md`.
 - [`bevy-cargo-features`](../bevy-cargo-features/SKILL.md) — replaces Unity Build Settings / PlayerSettings.
 - [`bevy-wasm-webgpu`](../bevy-wasm-webgpu/SKILL.md) — Unity WebGL → wasm32 / WebGPU port story.
-- [`bevy-cameras`](../bevy-cameras/SKILL.md) — `RenderTarget` as a component (0.18), camera modes; close to Unity Camera component.
+- [`bevy-cameras`](../bevy-cameras/SKILL.md) — `RenderTarget` components and camera modes; close to Unity's Camera component.
+- [`bevy-rendering`](../bevy-rendering/SKILL.md) — renderer selection and the physics/rendering boundary.
+- [`bevy-physics`](../bevy-physics/SKILL.md) — Rapier bodies, colliders, controllers,
+  queries, and fixed-step integration.
 - [`bevy-migration-0-17-to-0-18`](../bevy-migration-0-17-to-0-18/SKILL.md) — useful if you find a tutorial pinned to a pre-0.18 release.

@@ -1,12 +1,12 @@
-# bevy-porting — Vanilla JS / Canvas / HTML5 → Bevy 0.18
+# bevy-porting — Vanilla JS / Canvas / HTML5 → Bevy 0.19
 
 > Referenced from `bevy-porting/SKILL.md § Engine coverage`.
 
-Vanilla JS games typically share one shape: a `<canvas>` element, a `requestAnimationFrame` loop, and a set of classes that each own their own draw + update logic. This reference covers porting that pattern — and simpler HTML5 game patterns built on the same ideas — to Bevy 0.18.
+Vanilla JS games typically share one shape: a `<canvas>` element, a `requestAnimationFrame` loop, and a set of classes that each own their own draw + update logic. This reference covers porting that pattern — and simpler HTML5 game patterns built on the same ideas — to Bevy 0.19.
 
 ## Concept map
 
-| Vanilla JS / Canvas | Bevy 0.18 |
+| Vanilla JS / Canvas | Bevy 0.19 |
 |---|---|
 | `requestAnimationFrame(loop)` | `Update` schedule (Bevy owns the loop) |
 | `setInterval(tick, 16)` for fixed logic | `FixedUpdate` schedule |
@@ -78,7 +78,7 @@ commands.spawn((
 |---|---|
 | `ctx.drawImage(img, x, y)` | `Sprite::from_image(handle)` + `Transform` |
 | `ctx.fillRect(...)` colored box | 1×1 white sprite, `Transform::with_scale(Vec3::new(w, h, 1.))`, `Sprite { color: Color::srgb(r, g, b), .. }` |
-| `ctx.fillText(s, x, y)` | `commands.spawn((Text::new(s), TextFont { font_size: 24., .. }, Transform::from_xyz(x, y, 0.)))` |
+| `ctx.fillText(s, x, y)` | `commands.spawn((Text2d::new(s), TextFont { font_size: FontSize::Px(24.), ..default() }, Transform::from_xyz(x, y, 0.)))` |
 
 Bevy 2D does not have a built-in filled-rectangle primitive. The scaled white-sprite pattern is idiomatic for solid color rectangles.
 
@@ -143,7 +143,7 @@ Vanilla JS source is plain text. There is no binary project format to unpack. Po
 ## See also
 
 - [`../SKILL.md`](../SKILL.md) — bevy-porting dispatcher and general porting principles
-- [`phaser.md`](phaser.md) — Phaser 3 → Bevy 0.18 (same rendering targets, adds physics and scene system)
+- [`phaser.md`](phaser.md) — Phaser 3 → Bevy 0.19 (same rendering targets, adds physics and scene system)
 - `bevy-core-concepts` — schedules, `Update` vs `FixedUpdate`, `Time<Fixed>`
 - `bevy-wasm-webgpu` — WASM build setup, browser constraints, `requestAnimationFrame` internals
 - `bevy-ui` — `Text`, `Node`, Taffy/flex for UI elements previously drawn with Canvas text/boxes

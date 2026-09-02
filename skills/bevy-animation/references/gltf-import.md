@@ -65,10 +65,13 @@ Blender's default unit scale is 1 m = 1 m. If your character is 100 units tall i
 
 ## Gotchas
 
-- `KHR_animation_pointer` (animating arbitrary glTF properties, e.g. material color) is **not implemented** in Bevy 0.18's glTF loader. Bone transform animation is fully supported; material animation via pointer extension is not.
-- `gltf_animation` feature is enabled by default in `bevy = "0.18"` — no feature flag needed.
-- `AnimationTargetId` changed representation in 0.18: it is now `AnimationTargetId(Uuid)`. Earlier tutorials using the old `AnimationTarget { id, player }` struct are stale.
-- `AnimatedBy(Entity)` is a separate component from `AnimationTargetId` — both must be present on a bone entity for the animation system to drive it.
+- `KHR_animation_pointer` (animating arbitrary glTF properties, e.g. material color) is **not implemented** in Bevy 0.19's glTF loader. Bone transform animation is fully supported; material animation via pointer extension is not.
+- `gltf_animation` feature is enabled by default in `bevy = "0.19"` — no feature flag needed.
+- `AnimationTargetId` is `AnimationTargetId(Uuid)` and `AnimatedBy(Entity)` is a
+  separate component. Bevy 0.19 also changed the target-ID calculation algorithm;
+  regenerate any serialized IDs created by 0.18.
+- Both target components must be present on a bone entity for the animation system to
+  drive it.
 
 ## See also
 

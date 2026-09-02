@@ -11,7 +11,7 @@ you need a reference to the parent entity or want to spawn children conditionall
 | `children![bundle1, bundle2, ...]` | Declarative, co-located with the parent bundle. Best for static UI trees. |
 | `.with_children(\|p\| { p.spawn(...) })` | When you need the parent `Entity`, or for dynamic / conditional children. |
 
-`children![]` is in `bevy::prelude` as of Bevy 0.18.
+`children![]` is in `bevy::prelude` as of Bevy 0.19.
 
 ## Common patterns
 
@@ -112,9 +112,9 @@ sub-entity.
 
 ## Pitfalls
 
-- **`children![]` requires Rust 2024 edition** (or Rust ≥ 1.85 with explicit
-  edition in `Cargo.toml`). The macro uses `#![feature(..)]` stubs that stabilised
-  in Rust 2024. The tester crate's `Cargo.toml` sets `edition = "2024"`.
+- **Edition is not a `children![]` requirement.** Bevy 0.19 itself requires its
+  documented minimum Rust toolchain, but a consuming crate does not need to switch
+  editions merely to use this macro.
 
 - **Bundle order inside `children![]`.** Each comma-separated item is a complete
   bundle. Wrap multi-component children in a tuple:

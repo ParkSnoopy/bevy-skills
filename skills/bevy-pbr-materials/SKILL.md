@@ -1,6 +1,6 @@
 ---
 name: bevy-pbr-materials
-description: Use when spawning a mesh with `StandardMaterial`, writing a custom `Material` with `AsBindGroup` and a required `label()` (new in 0.18), wiring `MaterialPlugin<M>` whose `prepass_enabled`/`shadows_enabled` config moved to trait methods, or chasing visual shifts caused by the 0.18 PBR shading fix. Covers Bevy 0.19 PBR materials.
+description: Use when spawning `Mesh3d` with `StandardMaterial`, writing a Bevy 0.19 custom `Material` with `AsBindGroup`, enabling `shadow_maps_enabled` or contact shadows, configuring atmosphere entities, loading glTF `/std` material sub-assets, or selecting forward versus deferred PBR.
 license: MIT
 compatibility: opencode,claude-code,cursor
 metadata:
@@ -15,7 +15,8 @@ metadata:
 
 - Texturing a mesh with the built-in physically based shader.
 - Writing a custom `Material` (e.g. for stylised shading, dissolve effects, world-space shaders).
-- Wondering why your scene looks less glossy after upgrading to 0.18.
+- Enabling shadow maps or Bevy 0.19 contact shadows.
+- Spawning an `Atmosphere` entity and enabling it on a camera.
 - Compiler error on `AsBindGroup::label()` (now required).
 - Compiler error on `MaterialPlugin::<M> { prepass_enabled: ... }` (fields removed in 0.18).
 
@@ -62,7 +63,7 @@ fn setup(
 }
 ```
 
-## Custom Material — 0.18 shape
+## Custom material — Bevy 0.19 shape
 
 Custom materials with the `Material` trait and `AsBindGroup` are covered in
 detail at [references/custom-material.md](references/custom-material.md).
@@ -71,15 +72,22 @@ detail at [references/custom-material.md](references/custom-material.md).
 
 | Topic | Reference |
 |-------|-----------|
-| `PointLight`, `DirectionalLight`, `SpotLight` field shapes; `GlobalAmbientLight`; shadow cascades | [references/lighting.md](references/lighting.md) |
+| `PointLight`, `DirectionalLight`, `SpotLight`; `GlobalAmbientLight`; shadow maps, contact shadows, atmosphere | [references/lighting.md](references/lighting.md) |
 | `Plane3d`, `Cuboid`, `Sphere`, `Circle`, `Cylinder`, `Capsule3d`, `Torus` constructors and orientation gotchas | [references/mesh-primitives.md](references/mesh-primitives.md) |
 | `Material` trait methods, `AsBindGroup` attributes, `ShaderRef` variants, `MaterialPlugin` wiring | [references/custom-material.md](references/custom-material.md) |
 
-## Gotchas (0.18)
+## Bevy 0.19 gotchas
 
 - **`MaterialPlugin::<M> { prepass_enabled, shadows_enabled, ..default() }` is gone.** Override the `Material` trait methods instead — see [references/custom-material.md](references/custom-material.md).
+- **Light fields use `shadow_maps_enabled`.** `shadows_enabled` was renamed because
+  Bevy 0.19 adds the separate `contact_shadows_enabled` control.
+- **Contact shadows require both sides.** Add `ContactShadows` to the camera and set
+  `contact_shadows_enabled: true` on participating lights.
+- **`Atmosphere` is its own entity.** Keep `AtmosphereSettings` on the camera and
+  spawn `bevy::light::Atmosphere` separately.
+- **glTF material labels changed.** `#Material0` loads `GltfMaterial`; use
+  `#Material0/std` when you specifically need `Handle<StandardMaterial>`.
 - **`AsBindGroup::label()` is required.** The `#[derive(AsBindGroup)]` macro generates it automatically; hand-rolled impls must add it.
-- **PBR shading fix.** 0.18 corrected a long-standing Fresnel/specular issue that made everything look "overly glossy". Materials authored for 0.17 may look less reflective in 0.18 — re-tune `perceptual_roughness` / `reflectance`.
 - **Mesh component wrappers.** Use `Mesh3d(handle)` and `MeshMaterial3d(material_handle)` — the wrappers are what the renderer queries on.
 - **`Plane3d::new` takes `Vec2` for `half_size`**, not a scalar — see [references/mesh-primitives.md](references/mesh-primitives.md).
 - **`Color::rgb(...)` is gone** — use `Color::srgb(...)` or `Color::linear_rgb(...)`.
@@ -87,5 +95,8 @@ detail at [references/custom-material.md](references/custom-material.md).
 
 ## See also
 
-- `bevy-cameras` — what's looking at the materials.
-- `bevy-migration-0-17-to-0-18` — `MaterialPlugin` field removal, `AsBindGroup::label` requirement.
+- [`bevy-rendering`](../bevy-rendering/SKILL.md) — built-in renderer, forward/deferred,
+  custom passes, and renderer replacement boundaries.
+- [`bevy-cameras`](../bevy-cameras/SKILL.md) — views, HDR, and render targets.
+- [`bevy-migration-0-18-to-0-19`](../bevy-migration-0-18-to-0-19/SKILL.md) — light,
+  atmosphere, glTF material, and render-system migrations.

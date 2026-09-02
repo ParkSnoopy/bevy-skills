@@ -52,14 +52,13 @@ settings menu) without waiting for asset loading.
 
 ## `ActiveLanguageId` — what is actually loaded
 
-`ActiveLanguageId` (if exported in the version you are using) reflects the
+`ActiveLanguageId` reflects the
 locale whose bundles are **currently active and ready**. It lags behind
 `RequestedLanguageId` by the time it takes Bevy's `AssetServer` to load the
 `.ftl` files for the new locale.
 
-If `ActiveLanguageId` is not exported in your version of
-`es-fluent-manager-bevy`, react to `LocaleChangedEvent` instead — it fires
-exactly once when the new locale is ready.
+React to `LocaleChangedEvent` when a system must run exactly when the new locale
+is ready.
 
 ---
 
@@ -100,13 +99,11 @@ The plugin inserts `RequestedLanguageId` with this value before any systems run.
 
 ---
 
-## Pitfalls
+## Imperative localization
 
-### Imperative localization uses `BevyI18n`
-
-`BevyI18n` is exported by `es-fluent-manager-bevy 0.19.2`. Request it as a
-system parameter and call `localize_message(&message)` for imperative lookup;
-do not query the plugin's internal bundle resources directly.
+`es-fluent-manager-bevy 0.19.2` exports the `BevyI18n` system parameter. Use it
+for localized window titles, gameplay strings, or other output that is not a
+`Text` entity; keep `FluentText<T>` for reactive UI.
 
 ---
 

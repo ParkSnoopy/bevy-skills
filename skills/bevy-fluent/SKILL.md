@@ -98,11 +98,7 @@ pub fn switch_locale_on_keypress(
 
 ```rust
 use bevy::prelude::*;
-use my_game::{
-    build_i18n_plugin,
-    setup_ui,
-    switch_locale_on_keypress,
-};
+use my_game::{build_i18n_plugin, setup_ui, switch_locale_on_keypress};
 
 fn main() {
     App::new()
@@ -124,7 +120,7 @@ and pure-binary-crate workarounds — is in
 | Topic | Reference |
 |-------|-----------|
 | Why types must live in the lib target; `cargo es-fluent generate` invisibility footgun; full layout | [references/lib-target-layout.md](references/lib-target-layout.md) |
-| `BevyFluentText` derive vs `FluentText<T>` component; `FluentMessage` bound; `Text::new("")` | [references/components.md](references/components.md) |
+| `BevyFluentText` derive vs `FluentText<T>` component; `Text::new("")` | [references/components.md](references/components.md) |
 | `LocaleChangeEvent` (request) vs `LocaleChangedEvent` (confirmation); `RequestedLanguageId`; Messages vs Events | [references/locale-events.md](references/locale-events.md) |
 | `i18n.toml` full schema, `assets_dir`, `I18nPluginConfig` runtime override | [references/i18n-toml.md](references/i18n-toml.md) |
 | `generate`, `watch`, `check`, `clean`, `sync`, `tree`, `format` — dev and CI workflows | [references/cli.md](references/cli.md) |
@@ -140,9 +136,10 @@ and pure-binary-crate workarounds — is in
 
 2. **`BevyFluentText` is a derive macro; `FluentText<T>` is the component.** The
    derive registers refresh systems via `inventory`. The component is what you
-   spawn on UI entities. In 0.19.2 the message type needs `FluentMessage + Clone
-   + Send + Sync + 'static`; it does **not** need to derive Bevy `Component`.
-   See [references/components.md](references/components.md).
+   spawn on UI entities. In 0.19.2 the message type needs
+   `FluentMessage + Clone + Send + Sync + 'static`; it does not derive
+   `Component` itself. See
+   [references/components.md](references/components.md).
 
 3. **Minimum rustc 1.96.** Older toolchains fail with cryptic trait-resolution
    errors that do not mention the version requirement. Pin with
@@ -156,5 +153,5 @@ and pure-binary-crate workarounds — is in
 ## See also
 
 - `bevy-ui` — `FluentText<T>` is used alongside `Text`, `Node`, and `Button`.
-- `bevy-ecs-components` — component patterns for entities that carry `FluentText<T>`.
+- `bevy-ecs-components` — `#[derive(Component)]` patterns required by `FluentText<T>`.
 - `bevy-assets` — how Bevy's `AssetServer` loads `.ftl` files; relevant for hot-reload.

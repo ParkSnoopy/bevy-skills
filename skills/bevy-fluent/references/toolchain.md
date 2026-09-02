@@ -1,102 +1,53 @@
-# bevy-fluent — Toolchain Requirements
+# bevy-fluent — toolchain requirements
 
-## Minimum Rust version: 1.96
+## Supported versions
 
-`es-fluent-manager-bevy 0.19.2` declares **Rust 1.96** as its minimum supported version. Older
-toolchains fail with cryptic trait-resolution or proc-macro errors that do not
-point at the actual cause.
-
-Common symptom on older toolchains:
-
-```
-error[E0277]: the trait bound `UiMessage: FluentMessage` is not satisfied
-  --> src/lib.rs:8:10
-   |
-8  | #[derive(BevyFluentText, Clone, EsFluent)]
-   |          ^^^^^^^^^^^^^^ the trait `FluentMessage` is not implemented for `UiMessage`
-```
-
-This error appears even when `EsFluent` is derived correctly — it is caused by
-the proc-macro failing silently on a pre-1.96 compiler, leaving the trait
-unimplemented.
-
----
-
-## Pinning the toolchain
-
-Add a `rust-toolchain.toml` at the crate root:
+The Bevy 0.19-compatible set is:
 
 ```toml
+bevy = "0.19"
+es-fluent = { version = "0.18.1", features = ["derive"] }
+es-fluent-manager-bevy = { version = "0.19.2", features = ["macros"] }
+```
+
+Both es-fluent crates declare Rust 1.96 as their minimum supported Rust version.
+Pin at least that version when the workspace does not already use a newer
+stable toolchain:
+
+```toml
+# rust-toolchain.toml
 [toolchain]
 channel = "1.96"
 ```
 
-Rustup reads this file and automatically downloads and uses the pinned version
-for all `cargo` and `rustc` invocations in that directory tree.
+Verify the active compiler with `rustc --version`; a dependency MSRV failure can
+otherwise look like a derive or trait-resolution problem.
 
-### Why pin instead of using `stable`?
+## Feature selection
 
-`stable` advances over time. A future stable release may introduce a breaking
-change to a proc-macro dependency (rare, but it happens). Pinning ensures
-reproducible builds across developer machines and CI.
-
-### Keeping the pin current
-
-When `es-fluent` releases a version that requires a newer compiler, update
-`channel` to the new minimum. You can find the MSRV in `es-fluent`'s
-`Cargo.toml` under `rust-version`.
-
----
-
-## Ad-hoc toolchain override
-
-To check compilation on a specific version without changing `rust-toolchain.toml`:
-
-```sh
-cargo +1.96 check
-cargo +1.96 build
-```
-
-This is useful when bisecting a toolchain regression.
-
----
-
-## CI example
-
-```yaml
-# .github/workflows/ci.yml
-- name: Install Rust 1.96
-  uses: dtolnay/rust-toolchain@1.96
-
-- name: Build
-  run: cargo build
-
-- name: Check i18n
-  run: cargo es-fluent check
-```
-
-Or, if you have `rust-toolchain.toml` in the repo, `dtolnay/rust-toolchain@stable`
-will be overridden by the file automatically — no explicit version needed in CI.
-
----
-
-## `macros` feature required for `BevyFluentText` and `define_i18n_module!()`
-
-The `macros` feature is required for `BevyFluentText` and
-`define_i18n_module!()`. The default feature set enables it; opt out only with
-`default-features = false`.
-
-If you set `default-features = false` (common in size-sensitive game projects),
-you must re-add `macros` explicitly:
+`es-fluent-manager-bevy` defaults to `macros + file_watcher`. For release builds
+that do not need hot reload, make the choice explicit:
 
 ```toml
-es-fluent-manager-bevy = { version = "0.19.2", default-features = false, features = ["macros"] }
+es-fluent-manager-bevy = {
+  version = "0.19.2",
+  default-features = false,
+  features = ["macros"],
+}
 ```
 
-Without the `macros` feature the proc-macro crate is not compiled and
-`BevyFluentText` / `define_i18n_module!()` are not available, producing a
-"cannot find derive macro" or "unresolved import" compile error.
+Without `macros`, `BevyFluentText` and `define_i18n_module!` are unavailable.
+Without `file_watcher`, runtime localization still works; `.ftl` edits simply
+do not hot-reload.
 
----
+## CI
+
+```yaml
+- uses: dtolnay/rust-toolchain@1.96
+- run: cargo check --all-targets
+- run: cargo es-fluent check
+```
+
+Re-check the crates' `rust-version` whenever their pins change.
 
 See also: [cli.md](cli.md), [lib-target-layout.md](lib-target-layout.md).

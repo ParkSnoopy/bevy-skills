@@ -1,6 +1,6 @@
 # Voxel Generation Optimizations
 
-Best practices for fast procedural voxel world generation in Bevy 0.18.
+Best practices for fast procedural voxel world generation in Bevy 0.19.
 The techniques below account for the bulk of a documented ~25× throughput gain
 (~20M → ~500M voxels/sec) on a Bevy/Rust voxel engine. See
 [storage-formats](storage-formats.md) for complementary runtime-storage choices.
