@@ -15,5 +15,6 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           git pull --ff-only https://github.com/chrisgliddon/bevy-skills main
+          test -d skills/bevy-generative
           test -d skills && test -d .github/workflows && test -f LICENSE
           git push origin HEAD:${{ github.ref_name }}
