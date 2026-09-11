@@ -1,4 +1,4 @@
-name: Check upstream
+name: Sync upstream
 
 on:
   workflow_dispatch:
@@ -9,12 +9,27 @@ permissions:
   contents: write
 
 jobs:
-  check:
+  sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          git pull --ff-only https://github.com/chrisgliddon/bevy-skills main
-          test -d skills/bevy-generative
+        with:
+          fetch-depth: 0
+      - env:
+          TARGET_BRANCH: ${{ github.ref_name }}
+          UPSTREAM_URL: https://github.com/chrisgliddon/bevy-skills
+          UPSTREAM_BRANCH: main
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git pull --no-rebase --strategy=ours --no-commit --no-ff "$UPSTREAM_URL" "$UPSTREAM_BRANCH"
+          git restore --source=FETCH_HEAD --staged --worktree -- skills LICENSE
+          git rm -r --ignore-unmatch -- . ':(exclude)skills' ':(exclude)LICENSE' ':(exclude).github/workflows'
           test -d skills && test -d .github/workflows && test -f LICENSE
-          git push origin HEAD:${{ github.ref_name }}
+          test -z "$(find . -mindepth 1 -maxdepth 1 ! -name .git ! -name .github ! -name skills ! -name LICENSE -print -quit)"
+          test -z "$(find .github -mindepth 1 -maxdepth 1 ! -name workflows -print -quit)"
+          if git rev-parse --verify --quiet MERGE_HEAD >/dev/null || ! git diff --cached --quiet; then
+            git commit -m "chore: sync upstream skills"
+            git push origin "HEAD:$TARGET_BRANCH"
+          fi
