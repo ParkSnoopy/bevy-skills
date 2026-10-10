@@ -120,6 +120,12 @@ Desktop results do not establish Steam Deck or browser budgets.
 | Render diagnostics, backend limitations, CPU/GPU tool choice | [Render and platform profiling](references/render-and-platform-profiling.md) |
 | Acceptance thresholds, replay design, queue/task/upload telemetry | [Budgets and telemetry](references/budgets-and-telemetry.md) |
 
+## Shared assets and inference stalls
+
+- Separate GPU inference timing from renderer pass timing when a game shares its GPU with an ML backend. Measure the synchronous logits readback and first-use kernel compilation; a fixed-shape, side-effect-free warmup can move cold compilation out of gameplay without changing authoritative decision cadence. Report that cost as relocated, not eliminated.
+- Repeat native baseline and optimized runs without concurrent builds or game instances. Keep match-entry/loading frames identifiable and report maxima alongside p99; a percentile can hide a rare multi-second stall. Deduplicate diagnostic measurements by timestamp rather than repeatedly sampling a stale GPU value.
+- Distinguish image deduplication from full asset reuse. Bevy may share the PNG while each instance still allocates its own atlas layout. Inspect live image/layout/mesh counts and decoded dimensions, not compressed file sizes.
+
 ## Review checklist
 
 - Every number has a type (gauge/counter/histogram), unit, scope, and sampling rule.
